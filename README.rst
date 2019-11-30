@@ -15,6 +15,7 @@ Usage
 -----
 To run the demo,
 ::
+
   python satellite.py
 
 It will print out a set of satellite constellations.
@@ -63,4 +64,4 @@ https://arxiv.org/abs/1709.05381
 
 License
 -------
-Released under the Apache License 2.0. See `LICENSE <../LICENSE>`_ file.
+Released under the Apache License 2.0. See `LICENSE <./LICENSE>`_ file.
