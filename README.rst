@@ -1,5 +1,6 @@
-Satellite Placement Demo
-========================
+===================
+Satellite Placement
+===================
 Suppose you have a set of ``N`` satellites and ``k`` targets on Earth that you
 want to observe. Each of your satellites has varying capabilities for Earth
 observation; in particular, the amount of ground that they can observe for a
