@@ -1,3 +1,7 @@
+.. image:: https://circleci.com/gh/dwave-examples/satellite-placement.svg?style=svg
+    :target: https://circleci.com/gh/dwave-examples/satellite-placement
+    :alt: Linux/Mac/Windows build status
+
 ===================
 Satellite Placement
 ===================
