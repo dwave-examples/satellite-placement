@@ -19,6 +19,9 @@
 The problem is to choose k sub-constellations of m satellites such that the
 sum of the average coverage within each constellation is maximized.
 
+There are two versions of the data. The first version runs quickly with 
+Simulated Annealing. The second version is designed for Hybrid Solver Service.
+
 .. _link: https://www.dwavesys.com/sites/default/files/QuantumForSatellitesQubits-4.pdf
 
 .. [#btkrd] G. Bass, C. Tomlin, V. Kumar, P. Rihaczek, J. Dulny III.

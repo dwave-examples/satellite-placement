@@ -14,14 +14,22 @@ satellites into ``k`` constellations such that the average coverage of each
 constellation is maximized? This is the question that we will be addressing in
 this demo!
 
+There are two versions available. The first version has ``N=12`` and ``k=4``.
+The larger version has ``N=39`` and ``k=13``.
+
 Note: in this demo we are assuming that ``N`` is a multiple of ``k``.
 
 Usage
 -----
-To run the demo,
+To run the smaller demo, run the command:
 ::
 
   python satellite.py
+
+To run the larger  demo, run the command:
+::
+
+  python satellite.py large
 
 It will print out a set of satellite constellations.
 
