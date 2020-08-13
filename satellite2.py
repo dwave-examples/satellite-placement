@@ -116,7 +116,7 @@ for c0, c1 in itertools.combinations(bqm.variables, 2):
 # finally we wish to choose num_constellations variables. We pick strength of 1
 # because we don't want it to be advantageous to violate the constraint by
 # picking more variables
-bqm.update(dimod.generators.combinations(bqm, num_constellations, strength=1))
+bqm.update(dimod.generators.combinations(bqm.variables, num_constellations, strength=1))
 
 # sample from the bqm using simulated annealing
 sampleset = LeapHybridSampler().sample(bqm).aggregate()
