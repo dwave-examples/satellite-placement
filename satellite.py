@@ -21,6 +21,9 @@ sum of the average coverage within each constellation is maximized.
 
 There are two versions of the data. The first version runs quickly with
 Simulated Annealing. The second version is designed for Hybrid Solver Service.
+To run the first one, provide the input file 'small.json' and the solver
+name 'neal'. To run the second one, provide the input file 'large.json' and
+the solver name 'hss'.
 
 .. _link: https://www.dwavesys.com/sites/default/files/QuantumForSatellitesQubits-4.pdf
 
