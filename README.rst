@@ -24,12 +24,12 @@ Usage
 To run the smaller demo, run the command:
 ::
 
-  python satellite.py
+  python satellite.py small.json neal
 
 To run the larger  demo, run the command:
 ::
 
-  python satellite.py large
+  python satellite.py large.json hss
 
 It will print out a set of satellite constellations.
 
