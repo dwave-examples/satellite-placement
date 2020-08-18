@@ -46,7 +46,6 @@ parser.add_argument('file', metavar='file', type=str, help='Input file')
 parser.add_argument('solver', metavar='solver', type=str, help='Solver')
 args = parser.parse_args()
 
-file = args.file
 f = open(args.file, 'r')
 data = json.load(f)
 f.close()
