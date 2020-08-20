@@ -46,9 +46,8 @@ parser.add_argument('file', metavar='file', type=str, help='Input file')
 parser.add_argument('solver', metavar='solver', type=str, help='Solver')
 args = parser.parse_args()
 
-f = open(args.file, 'r')
-data = json.load(f)
-f.close()
+with open(args.file, 'r') as fp:
+    data = json.load(fp)
 
 # each of the 12 satellites (labelled 0-11) has a coverage score. This could be
 # calculated as the percentage of time that the Earth region is in range of the
@@ -89,8 +88,11 @@ bqm.update(dimod.generators.combinations(bqm.variables, data['num_constellations
 
 if args.solver == 'hss':
     sampleset = LeapHybridSampler().sample(bqm).aggregate()
-else:
+elif args.solver == 'neal':
     sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
+else:
+    print("satellite.py: Unrecognized solver")
+    exit(1)
 
 constellations = [constellation
                   for constellation, chosen in sampleset.first.sample.items()

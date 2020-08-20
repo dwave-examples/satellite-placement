@@ -21,12 +21,12 @@ Note: in this demo we are assuming that ``N`` is a multiple of ``k``.
 
 Usage
 -----
-To run the smaller demo, run the command:
+To run the smaller demo, using D-Wave's Simulated Annealing package (Neal), run the command:
 ::
 
   python satellite.py small.json neal
 
-To run the larger  demo, run the command:
+To run the larger demo, using D-Wave's Hybrid Solver Service (HSS), run the command:
 ::
 
   python satellite.py large.json hss
