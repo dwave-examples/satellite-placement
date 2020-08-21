@@ -33,6 +33,8 @@ To run the larger demo, using D-Wave's Hybrid Solver Service (HSS), run the comm
 
 It will print out a set of satellite constellations.
 
+Note: the larger demo is memory-intensive. It may use more than 10 GB of RAM.
+
 Code Overview
 -------------
 The idea is to consider all possible combinations of satellites, eliminate
