@@ -1,4 +1,4 @@
-# Copyright 2019 D-Wave Systems Inc.
+# Copyright 2020 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -19,6 +19,12 @@
 The problem is to choose k sub-constellations of m satellites such that the
 sum of the average coverage within each constellation is maximized.
 
+There are two versions of the data. The first version runs quickly with
+Simulated Annealing. The second version is designed for Hybrid Solver Service.
+To run the first one, provide the input file 'small.json' and the solver
+name 'neal'. To run the second one, provide the input file 'large.json' and
+the solver name 'hss'.
+
 .. _link: https://www.dwavesys.com/sites/default/files/QuantumForSatellitesQubits-4.pdf
 
 .. [#btkrd] G. Bass, C. Tomlin, V. Kumar, P. Rihaczek, J. Dulny III.
@@ -27,45 +33,37 @@ sum of the average coverage within each constellation is maximized.
     https://arxiv.org/abs/1709.05381
 
 """
-import itertools
-import random
-
+import argparse
 import dimod
+import itertools
+import json
 import neal
-import networkx as nx
+import sys
+from dwave.system import LeapHybridSampler
 
-# we wish to divide 12 satellites into 4 constellations of 3 satellites each.
-num_satellites = 12
-num_constellations = 4
+parser = argparse.ArgumentParser(description='Satellites example')
+parser.add_argument('file', metavar='file', type=str, help='Input file')
+parser.add_argument('solver', metavar='solver', type=str, help='Solver')
+args = parser.parse_args()
 
-constellation_size = num_satellites // num_constellations
-
+with open(args.file, 'r') as fp:
+    data = json.load(fp)
 
 # each of the 12 satellites (labelled 0-11) has a coverage score. This could be
 # calculated as the percentage of time that the Earth region is in range of the
 # satellite
-coverage = {0: 0.90,
-            1: 0.36,
-            2: 0.79,
-            3: 0.78,
-            4: 0.46,
-            5: 0.27,
-            6: 0.86,
-            7: 0.52,
-            8: 0.78,
-            9: 0.99,
-            10: 0.25,
-            11: 0.91}
+
+constellation_size = data['num_satellites'] // data['num_constellations']
 
 # don't consider constellations with average score less than score_threshold
 score_threshold = .4
 
-bqm = dimod.BinaryQuadraticModel.empty(dimod.BINARY)
+bqm = dimod.AdjVectorBQM.empty(dimod.BINARY)
 
 # first we want to favor combinations with a high score
-for constellation in itertools.combinations(range(num_satellites), constellation_size):
+for constellation in itertools.combinations(range(data['num_satellites']), constellation_size):
     # the score is the average coverage for a constellation
-    score = sum(coverage[v] for v in constellation) / constellation_size
+    score = sum(data['coverage'][str(v)] for v in constellation) / constellation_size
 
     # to make it smaller, throw out the combinations with a score below
     # a set threshold
@@ -86,10 +84,15 @@ for c0, c1 in itertools.combinations(bqm.variables, 2):
 # finally we wish to choose num_constellations variables. We pick strength of 1
 # because we don't want it to be advantageous to violate the constraint by
 # picking more variables
-bqm.update(dimod.generators.combinations(bqm, num_constellations, strength=1))
+bqm.update(dimod.generators.combinations(bqm.variables, data['num_constellations'], strength=1))
 
-# sample from the bqm using simulated annealing
-sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
+if args.solver == 'hss':
+    sampleset = LeapHybridSampler().sample(bqm).aggregate()
+elif args.solver == 'neal':
+    sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
+else:
+    print("satellite.py: Unrecognized solver")
+    exit(1)
 
 constellations = [constellation
                   for constellation, chosen in sampleset.first.sample.items()

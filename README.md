@@ -12,17 +12,30 @@ amount of time is different. Since there are `k` targets, you would like to have
 into `k` constellations such that the average coverage of each constellation is
 maximized? This is the question that we will be addressing in this demo!
 
+There are two versions available. The first version has `N=12` and `k=4`.
+The larger version has `N=39` and `k=13`.
+
 Note: in this demo we are assuming that `N` is a multiple of `k`.
 
 ## Usage
 
-To run the demo,
+To run the smaller demo, using D-Wave's Simulated Annealing package (Neal),
+run the command:
 
 ```bash
-python satellite.py
+python satellite.py small.json neal
+```
+
+To run the larger demo, using D-Wave's Hybrid Solver Service (HSS),
+run the command:
+
+```bash
+python satellite.py large.json hss
 ```
 
 It will print out a set of satellite constellations.
+
+Note: the larger demo is memory-intensive. It may use more than 10 GB of RAM.
 
 ## Code Overview
 
