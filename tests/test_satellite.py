@@ -24,8 +24,10 @@ class TestSmoke(unittest.TestCase):
     # test that the example runs without failing
     def test_smoke(self):
         file_path = os.path.join(example_dir, 'satellite.py')
+        data_path = os.path.join(example_dir, 'small.json')
+        solver = 'neal'
 
-        value = subprocess.check_output([sys.executable, file_path])
+        value = subprocess.check_output([sys.executable, file_path, data_path, solver])
 
         for constellation in eval(value):
             self.assertIsInstance(constellation, frozenset)
@@ -34,8 +36,12 @@ class TestSmoke(unittest.TestCase):
         """Verify contents of the output"""
 
         file_path = os.path.join(example_dir, 'satellite.py')
-        output = subprocess.check_output([sys.executable, file_path])
+        data_path = os.path.join(example_dir, 'small.json')
+        solver = 'neal'
+
+        output = subprocess.check_output([sys.executable, file_path, data_path, solver])
         output = str(output).upper()
+
         if os.getenv('DEBUG_OUTPUT'):
             print("Example output \n" + output)
 
