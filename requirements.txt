@@ -1,1 +1,1 @@
-dwave-ocean-sdk==2.5.0
+dwave-ocean-sdk>=2.5.0
