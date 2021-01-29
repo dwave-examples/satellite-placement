@@ -87,7 +87,8 @@ for c0, c1 in itertools.combinations(bqm.variables, 2):
 bqm.update(dimod.generators.combinations(bqm.variables, data['num_constellations'], strength=1))
 
 if args.solver == 'hss':
-    sampleset = LeapHybridSampler().sample(bqm).aggregate()
+    sampleset = LeapHybridSampler().sample(bqm,
+                          label='Example - Satellite Placement').aggregate()
 elif args.solver == 'neal':
     sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
 else:
