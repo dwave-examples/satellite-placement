@@ -58,7 +58,7 @@ constellation_size = data['num_satellites'] // data['num_constellations']
 # don't consider constellations with average score less than score_threshold
 score_threshold = .4
 
-bqm = dimod.AdjVectorBQM.empty(dimod.BINARY)
+bqm = dimod.BinaryQuadraticModel.empty(dimod.BINARY)
 
 # first we want to favor combinations with a high score
 for constellation in itertools.combinations(range(data['num_satellites']), constellation_size):
