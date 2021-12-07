@@ -25,7 +25,7 @@ To run the first one, provide the input file 'small.json' and the solver
 name 'neal'. To run the second one, provide the input file 'large.json' and
 the solver name 'hss'.
 
-.. _link: https://www.dwavesys.com/sites/default/files/QuantumForSatellitesQubits-4.pdf
+.. _link: https://www.dwavesys.com/media/2t2naqik/quantumforsatellitesqubits-4_0.pdf
 
 .. [#btkrd] G. Bass, C. Tomlin, V. Kumar, P. Rihaczek, J. Dulny III.
     Heterogeneous Quantum Computing for Satellite Constellation Optimization:
