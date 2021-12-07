@@ -40,7 +40,7 @@ import json
 import neal
 import sys
 from dwave.system import LeapHybridSampler
-# Pr(at least one event)=1−Pr(none of the events)
+# For independent events, Pr(at least one event)=1−Pr(none of the events)
 # https://math.stackexchange.com/questions/85849/calculating-the-probability-that-at-least-one-of-a-series-of-events-will-happen
 def calculateScore(constellation, data):
     score = 1
