@@ -41,6 +41,17 @@ import neal
 import sys
 from dwave.system import LeapHybridSampler
 
+
+# For independent events, Pr(at least one event)=1−Pr(none of the events)
+# https://math.stackexchange.com/questions/85849/calculating-the-probability-that-at-least-one-of-a-series-of-events-will-happen
+def calculate_score(constellation, data):
+    score = 1
+    for v in constellation:
+        score *= (1 - data['coverage'][str(v)])
+    score = 1 - score
+    return score
+
+
 parser = argparse.ArgumentParser(description='Satellites example')
 parser.add_argument('file', metavar='file', type=str, help='Input file')
 parser.add_argument('solver', metavar='solver', type=str, help='Solver')
@@ -62,8 +73,8 @@ bqm = dimod.BinaryQuadraticModel.empty(dimod.BINARY)
 
 # first we want to favor combinations with a high score
 for constellation in itertools.combinations(range(data['num_satellites']), constellation_size):
-    # the score is the average coverage for a constellation
-    score = sum(data['coverage'][str(v)] for v in constellation) / constellation_size
+    # the score is the probability of at least one satellite in the constelation having line of sight over the target at any one time.
+    score = calculate_score(constellation, data)
 
     # to make it smaller, throw out the combinations with a score below
     # a set threshold
@@ -99,4 +110,10 @@ constellations = [constellation
                   for constellation, chosen in sampleset.first.sample.items()
                   if chosen]
 
-print(constellations)
+tot = 0
+for constellation in constellations:
+    score = calculate_score(constellation, data)
+    print("Constellation: " + str(constellation) + ", Score: " + str(score))
+    tot += score
+print("Total Score: " + str(tot))
+print("Normalized Score (tot / # constellations): " + str((tot / data['num_constellations'])))

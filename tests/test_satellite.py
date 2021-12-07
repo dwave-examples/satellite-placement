@@ -21,17 +21,6 @@ example_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class TestSmoke(unittest.TestCase):
-    # test that the example runs without failing
-    def test_smoke(self):
-        file_path = os.path.join(example_dir, 'satellite.py')
-        data_path = os.path.join(example_dir, 'small.json')
-        solver = 'neal'
-
-        value = subprocess.check_output([sys.executable, file_path, data_path, solver])
-
-        for constellation in eval(value):
-            self.assertIsInstance(constellation, frozenset)
-
     def test_satellite(self):
         """Verify contents of the output"""
 
@@ -40,14 +29,16 @@ class TestSmoke(unittest.TestCase):
         solver = 'neal'
 
         output = subprocess.check_output([sys.executable, file_path, data_path, solver])
-        output = str(output).upper()
+        output = output.decode('utf-8') # Bytes to str
+        output = output.lower()
 
         if os.getenv('DEBUG_OUTPUT'):
             print("Example output \n" + output)
 
-        with self.subTest(msg="Verify if output contains '[frozenset({' \n"):
-            self.assertIn("[frozenset({".upper(), output)
+        with self.subTest(msg="Verify output contains expected keywords \n"):
+            self.assertIn("constellation", output)
+            self.assertIn("score", output)
         with self.subTest(msg="Verify if error string contains in output \n"):
-            self.assertNotIn("ERROR", output)
+            self.assertNotIn("error", output)
         with self.subTest(msg="Verify if warning string contains in output \n"):
-            self.assertNotIn("WARNING", output)
+            self.assertNotIn("warning", output)

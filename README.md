@@ -9,7 +9,7 @@ to observe. Each of your satellites has varying capabilities for Earth
 observation; in particular, the amount of ground that they can observe for a set
 amount of time is different. Since there are `k` targets, you would like to have
 `k` constellations to monitor said targets. How do you group your satellites
-into `k` constellations such that the average coverage of each constellation is
+into `k` constellations such that the coverage of each constellation is
 maximized? This is the question that we will be addressing in this demo!
 
 There are two versions available. The first version has `N=12` and `k=4`.
@@ -53,7 +53,7 @@ of solutions:
 * The `score_threshold` - used to determine bad constellations - was
   assigned an arbitrarily picked number
 * In the code, we add weights to each constellation such that we are favoring
-  constellations with a high average coverage (aka high score). This is done
+  constellations with a high coverage (aka high score). This is done
   with `bqm.add_variable(frozenset(constellation), -score)`. Observe that we
   are using `frozenset(constellation)` as the variable rather than simply
   `constellation` as
