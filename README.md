@@ -60,13 +60,6 @@ of solutions:
      constellation should not matter, `{a, b, c} == {c, a, b}`). In addition,
      `add_variable(..)` needs its variables to be immutable, hence, we are using
      `frozenset` rather than simply `set`.
-  2. Since are there are more ways to form the set `{a, b, c}` than the set `{a,
-     a, a} -> {a}`, the set `{'a', 'b', 'c'}` will accumulate a more negative
-     score and thus be more likely to get selected. This is desired as we do not
-     want duplicate items within our constellation. (Note: by "more ways to form
-     the set", I am referring to how `(b, c, a)` and `(a, c, b)` are tuples that
-     would map to the same set, where as `(a, a, a)` would be the only 3-tuple
-     that would map to the set `{a}`.)
 
 ## References
 
