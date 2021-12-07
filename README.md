@@ -50,16 +50,14 @@ of solutions:
 
 ## Code Specifics
 
-* In the code, we add weights to each constellation such that we are favoring
-  constellations with a high coverage (aka high score). This is done
-  with `bqm.add_variable(frozenset(constellation), -score)`. Observe that we
-  are using `frozenset(constellation)` as the variable rather than simply
-  `constellation` as
-
-  1. We need our variable to be a set (i.e. the order of the satellites in a
-     constellation should not matter, `{a, b, c} == {c, a, b}`). In addition,
-     `add_variable(..)` needs its variables to be immutable, hence, we are using
-     `frozenset` rather than simply `set`.
+We add weights to each constellation such that we are favoring constellations
+with a high coverage (aka high score). This is done with
+`bqm.add_variable(frozenset(constellation), -score)`.  Note that `frozenset` is
+used to convey the concept that each variable in the model is a set of
+individual satellites, and the ordering does not matter.  Incidentally, the code
+that defines the variables iterates over only the combinations (not the
+permutations), so defining the variables as tuples would work just as well
+(however, `set` cannot be used because the variables must be immutable).
 
 ## References
 
