@@ -50,8 +50,6 @@ of solutions:
 
 ## Code Specifics
 
-* The `score_threshold` - used to determine bad constellations - was
-  assigned an arbitrarily picked number
 * In the code, we add weights to each constellation such that we are favoring
   constellations with a high coverage (aka high score). This is done
   with `bqm.add_variable(frozenset(constellation), -score)`. Observe that we
