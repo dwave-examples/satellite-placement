@@ -50,25 +50,14 @@ of solutions:
 
 ## Code Specifics
 
-* The `score_threshold` - used to determine bad constellations - was
-  assigned an arbitrarily picked number
-* In the code, we add weights to each constellation such that we are favoring
-  constellations with a high coverage (aka high score). This is done
-  with `bqm.add_variable(frozenset(constellation), -score)`. Observe that we
-  are using `frozenset(constellation)` as the variable rather than simply
-  `constellation` as
-
-  1. We need our variable to be a set (i.e. the order of the satellites in a
-     constellation should not matter, `{a, b, c} == {c, a, b}`). In addition,
-     `add_variable(..)` needs its variables to be immutable, hence, we are using
-     `frozenset` rather than simply `set`.
-  2. Since are there are more ways to form the set `{a, b, c}` than the set `{a,
-     a, a} -> {a}`, the set `{'a', 'b', 'c'}` will accumulate a more negative
-     score and thus be more likely to get selected. This is desired as we do not
-     want duplicate items within our constellation. (Note: by "more ways to form
-     the set", I am referring to how `(b, c, a)` and `(a, c, b)` are tuples that
-     would map to the same set, where as `(a, a, a)` would be the only 3-tuple
-     that would map to the set `{a}`.)
+We add weights to each constellation such that we are favoring constellations
+with a high coverage (aka high score). This is done with
+`bqm.add_variable(frozenset(constellation), -score)`.  Note that `frozenset` is
+used to convey the concept that each variable in the model is a set of
+individual satellites, and the ordering does not matter.  Incidentally, the code
+that defines the variables iterates over only the combinations (not the
+permutations), so defining the variables as tuples would work just as well
+(however, `set` cannot be used because the variables must be immutable).
 
 ## References
 
