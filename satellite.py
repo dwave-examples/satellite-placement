@@ -34,13 +34,14 @@ the solver name 'hss'.
 
 """
 import argparse
+import math
 import dimod
 import itertools
 import json
 import neal
 import sys
 from dwave.system import LeapHybridSampler
-
+import matplotlib.pyplot as plt
 
 def read_in_args(args):
     """ Read in user specified parameters."""
@@ -48,11 +49,14 @@ def read_in_args(args):
     parser = argparse.ArgumentParser(description='Satellites example')
     parser.add_argument('file', metavar='file', type=str, help='Input file')
     parser.add_argument('solver', metavar='solver', type=str, help='Solver')
+    parser.add_argument('--viz', type=bool, help='Visualization', default=True)
     return parser.parse_args()
 
 # For independent events, Pr(at least one event)=1−Pr(none of the events)
 # https://math.stackexchange.com/questions/85849/calculating-the-probability-that-at-least-one-of-a-series-of-events-will-happen
 def calculate_score(constellation, data):
+    """ Function to calculate constellation score."""
+
     score = 1
     for v in constellation:
         score *= (1 - data['coverage'][str(v)])
@@ -60,6 +64,7 @@ def calculate_score(constellation, data):
     return score
 
 def build_bqm(data, constellation_size):
+    """ Build the bqm for the problem."""
 
     # don't consider constellations with average score less than score_threshold
     score_threshold = .4
@@ -93,6 +98,40 @@ def build_bqm(data, constellation_size):
     bqm.update(dimod.generators.combinations(bqm.variables, data['num_constellations'], strength=1))
 
     return bqm
+
+def viz(constellations, data):
+    """ Visualize the solution"""
+    
+    angle = 2*math.pi / data["num_satellites"]
+
+    # display scatter plot data
+    plt.figure()
+    plt.title('Constellations')
+
+    s = 0
+    for c in constellations:
+        x = []
+        y = []
+        label = []
+        for satellite in c:
+            coverage = 1 - data["coverage"][str(satellite)]
+            label.append(satellite)
+            x.append(coverage*math.cos(s*angle))
+            y.append(coverage*math.sin(s*angle))
+            s += 1
+
+        x.append(x[0])
+        y.append(y[0])
+        label.append(label[0])
+        plt.plot(x, y, marker = 'o', markersize=1)
+
+    plt.scatter([0], [0], marker = '*', color='#7f7f7f', s=500)
+    plt.axis('off')
+    
+    # save plot
+    plt.savefig('constellations.png')
+
+    return
 
 if __name__ == '__main__':
 
@@ -129,4 +168,6 @@ if __name__ == '__main__':
         tot += score
     print("Total Score: " + str(tot))
     print("Normalized Score (tot / # constellations): " + str((tot / data['num_constellations'])))
-    
+
+    if args.viz:
+        viz(constellations, data)
