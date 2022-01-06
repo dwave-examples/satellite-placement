@@ -33,7 +33,11 @@ run the command:
 python satellite.py large.json hss
 ```
 
-It will print out a set of satellite constellations.
+It will print out a set of satellite constellations and create an image to
+visualize the scores for each constellation, as shown below. Satellites closer
+to the center (grey star) have a higher score.
+
+![Example Output](readme_imgs/constellations.png)
 
 Note: the larger demo is memory-intensive. It may use more than 10 GB of RAM.
 
