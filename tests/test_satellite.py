@@ -29,7 +29,7 @@ class TestSmoke(unittest.TestCase):
         solver = 'neal'
         viz = False
 
-        output = subprocess.check_output([sys.executable, file_path, data_path, solver, viz])
+        output = subprocess.check_output([sys.executable, file_path, data_path, solver])
         output = output.decode('utf-8') # Bytes to str
         output = output.lower()
 

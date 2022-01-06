@@ -34,22 +34,22 @@ the solver name 'hss'.
 
 """
 import argparse
-import math
-import dimod
 import itertools
 import json
-import neal
+import math
 import sys
-from dwave.system import LeapHybridSampler
-import matplotlib.pyplot as plt
 
-def read_in_args(args):
+import matplotlib.pyplot as plt
+import dimod
+import neal
+from dwave.system import LeapHybridSampler
+
+def read_in_args():
     """ Read in user specified parameters."""
 
     parser = argparse.ArgumentParser(description='Satellites example')
     parser.add_argument('file', metavar='file', type=str, help='Input file')
     parser.add_argument('solver', metavar='solver', type=str, help='Solver')
-    parser.add_argument('--viz', type=bool, help='Visualization', default=True)
     return parser.parse_args()
 
 # For independent events, Pr(at least one event)=1−Pr(none of the events)
@@ -131,11 +131,9 @@ def viz(constellations, data):
     # save plot
     plt.savefig('constellations.png')
 
-    return
-
 if __name__ == '__main__':
 
-    args = read_in_args(sys.argv[1:])
+    args = read_in_args()
 
     with open(args.file, 'r') as fp:
         data = json.load(fp)
