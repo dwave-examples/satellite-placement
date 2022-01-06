@@ -167,5 +167,4 @@ if __name__ == '__main__':
     print("Total Score: " + str(tot))
     print("Normalized Score (tot / # constellations): " + str((tot / data['num_constellations'])))
 
-    if args.viz:
-        viz(constellations, data)
+    viz(constellations, data)
