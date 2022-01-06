@@ -42,6 +42,14 @@ import sys
 from dwave.system import LeapHybridSampler
 
 
+def read_in_args(args):
+    """ Read in user specified parameters."""
+
+    parser = argparse.ArgumentParser(description='Satellites example')
+    parser.add_argument('file', metavar='file', type=str, help='Input file')
+    parser.add_argument('solver', metavar='solver', type=str, help='Solver')
+    return parser.parse_args()
+
 # For independent events, Pr(at least one event)=1−Pr(none of the events)
 # https://math.stackexchange.com/questions/85849/calculating-the-probability-that-at-least-one-of-a-series-of-events-will-happen
 def calculate_score(constellation, data):
@@ -51,69 +59,74 @@ def calculate_score(constellation, data):
     score = 1 - score
     return score
 
+def build_bqm(data, constellation_size):
 
-parser = argparse.ArgumentParser(description='Satellites example')
-parser.add_argument('file', metavar='file', type=str, help='Input file')
-parser.add_argument('solver', metavar='solver', type=str, help='Solver')
-args = parser.parse_args()
+    # don't consider constellations with average score less than score_threshold
+    score_threshold = .4
 
-with open(args.file, 'r') as fp:
-    data = json.load(fp)
+    bqm = dimod.BinaryQuadraticModel.empty(dimod.BINARY)
 
-# each of the 12 satellites (labelled 0-11) has a coverage score. This could be
-# calculated as the percentage of time that the Earth region is in range of the
-# satellite
+    # first we want to favor combinations with a high score
+    for constellation in itertools.combinations(range(data['num_satellites']), constellation_size):
+        # the score is the probability of at least one satellite in the constelation having line of sight over the target at any one time.
+        score = calculate_score(constellation, data)
 
-constellation_size = data['num_satellites'] // data['num_constellations']
+        # to make it smaller, throw out the combinations with a score below
+        # a set threshold
+        if score < score_threshold:
+            continue
 
-# don't consider constellations with average score less than score_threshold
-score_threshold = .4
+        # we subtract the score because we want to minimize the energy
+        bqm.add_variable(frozenset(constellation), -score)
 
-bqm = dimod.BinaryQuadraticModel.empty(dimod.BINARY)
+    # next we want to penalize pairs that share a satellite. We choose 2 because
+    # because we don't want it to be advantageous to pick both in the case that
+    # they both have 100% coverage
+    for c0, c1 in itertools.combinations(bqm.variables, 2):
+        if c0.isdisjoint(c1):
+            continue
+        bqm.add_interaction(c0, c1, 2)
 
-# first we want to favor combinations with a high score
-for constellation in itertools.combinations(range(data['num_satellites']), constellation_size):
-    # the score is the probability of at least one satellite in the constelation having line of sight over the target at any one time.
-    score = calculate_score(constellation, data)
+    # finally we wish to choose num_constellations variables. We pick strength of 1
+    # because we don't want it to be advantageous to violate the constraint by
+    # picking more variables
+    bqm.update(dimod.generators.combinations(bqm.variables, data['num_constellations'], strength=1))
 
-    # to make it smaller, throw out the combinations with a score below
-    # a set threshold
-    if score < score_threshold:
-        continue
+    return bqm
 
-    # we subtract the score because we want to minimize the energy
-    bqm.add_variable(frozenset(constellation), -score)
+if __name__ == '__main__':
 
-# next we want to penalize pairs that share a satellite. We choose 2 because
-# because we don't want it to be advantageous to pick both in the case that
-# they both have 100% coverage
-for c0, c1 in itertools.combinations(bqm.variables, 2):
-    if c0.isdisjoint(c1):
-        continue
-    bqm.add_interaction(c0, c1, 2)
+    args = read_in_args(sys.argv[1:])
 
-# finally we wish to choose num_constellations variables. We pick strength of 1
-# because we don't want it to be advantageous to violate the constraint by
-# picking more variables
-bqm.update(dimod.generators.combinations(bqm.variables, data['num_constellations'], strength=1))
+    with open(args.file, 'r') as fp:
+        data = json.load(fp)
 
-if args.solver == 'hss':
-    sampleset = LeapHybridSampler().sample(bqm,
-                          label='Example - Satellite Placement').aggregate()
-elif args.solver == 'neal':
-    sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
-else:
-    print("satellite.py: Unrecognized solver")
-    exit(1)
+    # each of the 12 satellites (labelled 0-11) has a coverage score. This could be
+    # calculated as the percentage of time that the Earth region is in range of the
+    # satellite
 
-constellations = [constellation
-                  for constellation, chosen in sampleset.first.sample.items()
-                  if chosen]
+    constellation_size = data['num_satellites'] // data['num_constellations']
 
-tot = 0
-for constellation in constellations:
-    score = calculate_score(constellation, data)
-    print("Constellation: " + str(constellation) + ", Score: " + str(score))
-    tot += score
-print("Total Score: " + str(tot))
-print("Normalized Score (tot / # constellations): " + str((tot / data['num_constellations'])))
+    bqm = build_bqm(data, constellation_size)
+
+    if args.solver == 'hss':
+        sampleset = LeapHybridSampler().sample(bqm,
+                            label='Example - Satellite Placement').aggregate()
+    elif args.solver == 'neal':
+        sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
+    else:
+        print("satellite.py: Unrecognized solver")
+        exit(1)
+
+    constellations = [constellation
+                    for constellation, chosen in sampleset.first.sample.items()
+                    if chosen]
+
+    tot = 0
+    for constellation in constellations:
+        score = calculate_score(constellation, data)
+        print("Constellation: " + str(constellation) + ", Score: " + str(score))
+        tot += score
+    print("Total Score: " + str(tot))
+    print("Normalized Score (tot / # constellations): " + str((tot / data['num_constellations'])))
+    
