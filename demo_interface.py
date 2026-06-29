@@ -22,7 +22,7 @@ import dash_mantine_components as dmc
 from demo_configs import (
     CHECKLIST,
     DESCRIPTION,
-    DROPDOWN,
+    SCENARIO,
     MAIN_HEADER,
     RADIO,
     SLIDER,
@@ -240,9 +240,7 @@ def generate_settings_form() -> html.Div:
     Returns:
         A Div containing the settings for selecting the scenario, model, and solver.
     """
-    dropdown_options = generate_options(DROPDOWN)
-    checklist_options = generate_options(CHECKLIST)
-    radio_options = generate_options(RADIO)
+    scenario_options = generate_options(SCENARIO)
     solver_options = generate_options(SolverType)
 
     return html.Div(
@@ -254,21 +252,9 @@ def generate_settings_form() -> html.Div:
                 SLIDER,
             ),
             dropdown(
-                "Example Dropdown",
-                "dropdown",
-                sorted(dropdown_options, key=lambda op: op["value"]),
-            ),
-            checklist(
-                "Example Checklist",
-                "checklist",
-                sorted(checklist_options, key=lambda op: op["value"]),
-                [checklist_options[0]["value"]],
-            ),
-            radio(
-                "Example Radio",
-                "radio",
-                sorted(radio_options, key=lambda op: op["value"]),
-                radio_options[0]["value"],
+                "Scenario",
+                "scenario-select",
+                sorted(scenario_options, key=lambda op: op["value"]),
             ),
             dropdown(
                 "Solver",

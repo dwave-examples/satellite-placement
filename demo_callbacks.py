@@ -83,10 +83,7 @@ def render_initial_state(slider_value: int) -> str:
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
         State("solver-time-limit", "value"),
-        State("slider", "value"),
-        State("dropdown", "value"),
-        State("checklist", "value"),
-        State("radio", "value"),
+        State("scenario-select", "value"),
     ],
     running=[
         (Output("cancel-button", "style"), {}, {"display": "none"}),  # Show/hide cancel button.
@@ -105,10 +102,7 @@ def run_optimization(
     run_click: int,
     solver_type: str,
     time_limit: float,
-    slider_value: int,
-    dropdown_value: int,
-    checklist_value: list,
-    radio_value: int,
+    scenario_value: int,
 ) -> tuple[str, list]:
     """Runs the optimization and updates UI accordingly.
 
@@ -121,10 +115,7 @@ def run_optimization(
         run_click: The (total) number of times the run button has been clicked.
         solver_type: The solver to use for the optimization run defined by SolverType in demo_enums.py.
         time_limit: The solver time limit.
-        slider_value: The value of the slider.
-        dropdown_value: The value of the dropdown.
-        checklist_value: A list of the values of the checklist.
-        radio_value: The value of the radio.
+        scenario_value: The value of the scenario dropdown.
 
     Returns:
         A tuple containing:
