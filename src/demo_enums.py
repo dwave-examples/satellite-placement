@@ -16,9 +16,7 @@ from enum import Enum
 
 
 class SolverType(Enum):
-    """Add a list of solver options here. If this demo only requires 1 solver,
-    this functionality can be removed.
-    """
+    """Solver options for the satellite placement problem."""
 
     STRIDE = 0
     PYOMO = 1
@@ -29,7 +27,3 @@ class SolverType(Enum):
             SolverType.STRIDE: "Stride Hybrid Solver",
             SolverType.PYOMO: "Pyomo with IPOpt",
         }[self]
-
-
-### If any settings or variables are being used repeatedly, throughout the code, create a new
-### Enum for the setting here to avoid string comparisons or other fragile code practices.

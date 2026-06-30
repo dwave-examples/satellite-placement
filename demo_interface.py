@@ -20,12 +20,10 @@ from dash import dcc, html
 import dash_mantine_components as dmc
 
 from demo_configs import (
-    CHECKLIST,
     DESCRIPTION,
-    SCENARIO,
+    INSTANCE_INDEX,
     MAIN_HEADER,
-    RADIO,
-    SLIDER,
+    NUM_SATELLITES,
     SOLVER_TIME,
     THUMBNAIL,
 )
@@ -240,26 +238,28 @@ def generate_settings_form() -> html.Div:
     Returns:
         A Div containing the settings for selecting the scenario, model, and solver.
     """
-    scenario_options = generate_options(SCENARIO)
+    num_sat_options = generate_options(NUM_SATELLITES)
     solver_options = generate_options(SolverType)
 
     return html.Div(
         className="settings",
         children=[
+            dropdown(
+                "Number of Satellites",
+                "num-satellites-select",
+                sorted(num_sat_options, key=lambda op: int(op["value"])),
+            ),
             slider(
-                "Example Slider",
-                "slider",
-                SLIDER,
+                "Instance Index",
+                "instance-index-slider",
+                INSTANCE_INDEX,
             ),
-            dropdown(
-                "Scenario",
-                "scenario-select",
-                sorted(scenario_options, key=lambda op: op["value"]),
-            ),
-            dropdown(
+            checklist(
                 "Solver",
                 "solver-type-select",
                 sorted(solver_options, key=lambda op: op["value"]),
+                [option["value"] for option in solver_options],  # default: both selected
+                inline=False,
             ),
             input(
                 "Solver Time Limit (seconds)",
@@ -310,38 +310,6 @@ def generate_table(table_data: dict[str, list]) -> html.Table:
                         ]
                     ) for i in range(num_rows)
                 ]
-            ),
-        ],
-    )
-
-
-def problem_details(index: int) -> html.Div:
-    """Generate the problem details section.
-
-    Args:
-        index: Unique element id to differentiate matching elements. Must be different from left
-            column collapse button.
-
-    Returns:
-        Div containing a collapsable table.
-    """
-    return html.Div(
-        id={"type": "to-collapse-class", "index": index},
-        className="details-collapse-wrapper collapsed",
-        children=[
-            # Problem details collapsible button and header
-            html.Button(
-                id={"type": "collapse-trigger", "index": index},
-                className="details-collapse",
-                children=[
-                    html.H5("Problem Details"),
-                    html.Div(className="collapse-arrow"),
-                ],
-                **{"aria-expanded": "true"},
-            ),
-            html.Div(
-                className="details-to-collapse",
-                id="problem-details",
             ),
         ],
     )
@@ -438,9 +406,15 @@ def create_interface() -> html.Div:
                                                         [
                                                             dmc.TabsTab("Input", value="input-tab"),
                                                             dmc.TabsTab(
-                                                                "Results",
-                                                                value="results-tab",
-                                                                id="results-tab",
+                                                                "Stride",
+                                                                value="stride-tab",
+                                                                id="stride-tab",
+                                                                disabled=True,
+                                                            ),
+                                                            dmc.TabsTab(
+                                                                "Pyomo",
+                                                                value="pyomo-tab",
+                                                                id="pyomo-tab",
                                                                 disabled=True,
                                                             ),
                                                         ]
@@ -469,7 +443,7 @@ def create_interface() -> html.Div:
                                         ],
                                     ),
                                     dmc.TabsPanel(
-                                        value="results-tab",
+                                        value="stride-tab",
                                         tabIndex="13",
                                         children=[
                                             html.Div(
@@ -479,11 +453,25 @@ def create_interface() -> html.Div:
                                                         parent_className="results",
                                                         type="circle",
                                                         color=THEME_COLOR,
-                                                        # A Dash callback (in app.py) will generate content in the Div below
-                                                        children=html.Div(id="results"),
+                                                        children=html.Div(id="stride-results"),
                                                     ),
-                                                    # Problem details dropdown
-                                                    html.Div([html.Hr(), problem_details(1)]),
+                                                ],
+                                            )
+                                        ],
+                                    ),
+                                    dmc.TabsPanel(
+                                        value="pyomo-tab",
+                                        tabIndex="14",
+                                        children=[
+                                            html.Div(
+                                                className="tab-content-wrapper",
+                                                children=[
+                                                    dcc.Loading(
+                                                        parent_className="results",
+                                                        type="circle",
+                                                        color=THEME_COLOR,
+                                                        children=html.Div(id="pyomo-results"),
+                                                    ),
                                                 ],
                                             )
                                         ],

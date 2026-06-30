@@ -16,23 +16,37 @@
 
 THUMBNAIL = "static/dwave_logo.svg"
 
-APP_TITLE = "Demo Name"
-MAIN_HEADER = "Demo Name"
+APP_TITLE = "Satellite Placement"
+MAIN_HEADER = "Satellite Placement"
 DESCRIPTION = """\
-This is a Dash template for new examples. It includes some basic settings, tabs, and styling.
+Place satellites on a shared orbit so that the minimum angular separation
+between every interfering pair is as large as possible, while keeping each
+satellite within its allowed arc.
 """
 
 #######################################
 # Sliders, buttons and option entries #
 #######################################
 
-# an example dropdown
-SCENARIO = ["Option 1", "Option 2"]
+# Number of satellites per instance file
+NUM_SATELLITES = [5, 10, 20]
 
-# solver time limits in seconds (value means default)
+# Index of the specific instance within the file (0-based)
+INSTANCE_INDEX = {
+    "min": 0,
+    "max": 10,
+    "step": 1,
+    "value": 0,
+}
+
+#######################################
+# Solver settings                     #
+#######################################
+
+# Solver time limit in seconds
 SOLVER_TIME = {
-    "min": 10,
+    "min": 5,
     "max": 300,
     "step": 5,
-    "value": 10,
+    "value": 5,
 }

@@ -14,12 +14,15 @@
 
 from __future__ import annotations
 
+import numpy as np
 import dash
-from dash import MATCH
+from dash import MATCH, dcc, html
 from dash.dependencies import Input, Output, State
 
 from demo_interface import generate_table
 from src.demo_enums import SolverType
+from src.utils import compute_midpoints, get_instance
+from src.plot import create_orbit_figure
 
 
 @dash.callback(
@@ -56,54 +59,99 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> tuple[s
 @dash.callback(
     Output("input", "children"),
     inputs=[
-        Input("slider", "value"),
+        Input("num-satellites-select", "value"),
+        Input("instance-index-slider", "value"),
     ],
 )
-def render_initial_state(slider_value: int) -> str:
-    """Runs on load and any time the value of the slider is updated.
-        Add `prevent_initial_call=True` to skip on load runs.
+def render_input_state(num_satellites: str, instance_index: int) -> list:
+    """Render the problem-instance orbital diagram on the Input tab.
+
+    Triggered on page load and whenever the instance selection changes.
 
     Args:
-        slider_value: The value of the slider.
+        num_satellites: Number of satellites in the instance.
+        instance_index: Index of the specific instance within the file (0-based).
 
     Returns:
-        The content of the input tab.
+        A list of Dash components to display in the Input tab.
     """
-    return f"Put demo visuals here. The current slider value is {slider_value}."
+    n = int(num_satellites)
+    instance = get_instance(n, instance_index)
+    boundaries = instance["boundaries"]
+    west = boundaries["west_boundaries"]
+    east = boundaries["east_boundaries"]
+    interferences = np.array(instance["interferences"]).reshape(n, n)
+    midpoints = compute_midpoints(boundaries)
+
+    # Count significant interference pairs
+    n_pairs = int(np.sum(interferences > 0.1) // 2)
+    avg_arc = float(np.mean([east[i] - west[i] for i in range(n)]))
+    coverage = avg_arc / 360.0 * 100.0
+
+    fig = create_orbit_figure(
+        instance,
+        title=f"{n} Satellites — Instance {instance_index}",
+        show_interference=True,
+    )
+
+    return [
+        html.Div(
+            className="input-description",
+            children=[
+                html.H3("Problem Instance"),
+                html.P(
+                    "Each arc shows a satellite's allowed angular range on the orbit. "
+                    "Amber chords connect interfering pairs — the thicker the chord, "
+                    "the stronger the interference. Hollow circles mark each satellite's "
+                    "initial position (midpoint of its arc). "
+                    "Run the solver to find optimal placements that maximise the "
+                    "minimum separation between interfering pairs."
+                ),
+            ],
+        ),
+        dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        html.Div(
+            className="instance-stats",
+            children=[
+                html.Div([html.Strong("Satellites: "), str(n)]),
+                html.Div([html.Strong("Interference pairs (d > 0.1): "), str(n_pairs)]),
+                html.Div([html.Strong("Avg arc width: "), f"{avg_arc:.1f}°"]),
+                html.Div([html.Strong("Avg arc coverage: "), f"{coverage:.1f}% of orbit"]),
+            ],
+        ),
+    ]
 
 
 @dash.callback(
-    # The Outputs below must align with the return values of the function.
-    Output("results", "children"),
-    Output("problem-details", "children"),
+    Output("stride-results", "children"),
+    Output("pyomo-results", "children"),
     background=True,
     inputs=[
-        # The first string in the Input/State elements below must match an id in demo_interface.py
-        # Remove or alter the following id's to match any changes made to demo_interface.py
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
         State("solver-time-limit", "value"),
-        State("scenario-select", "value"),
+        State("num-satellites-select", "value"),
+        State("instance-index-slider", "value"),
     ],
     running=[
-        (Output("cancel-button", "style"), {}, {"display": "none"}),  # Show/hide cancel button.
-        (Output("run-button", "style"), {"display": "none"}, {}),  # Hides run button while running.
-        (Output("results-tab", "disabled"), True, False),  # Disables results tab while running.
-        (Output("results-tab", "children"), "Loading...", "Results"),
+        (Output("cancel-button", "style"), {}, {"display": "none"}),
+        (Output("run-button", "style"), {"display": "none"}, {}),
+        (Output("stride-tab", "disabled"), True, False),
+        (Output("pyomo-tab", "disabled"), True, False),
+        (Output("stride-tab", "children"), "Loading…", "Stride"),
+        (Output("pyomo-tab", "children"), "Loading…", "Pyomo"),
         (Output("tabs", "value"), "input-tab", "input-tab"),  # Switch to input tab while running.
-        (Output("run-in-progress", "data"), True, False),  # Can block certain callbacks.
     ],
     cancel=[Input("cancel-button", "n_clicks")],
     prevent_initial_call=True,
 )
 def run_optimization(
-    # The parameters below must match the `Input` and `State` variables found
-    # in the `inputs` list above.
     run_click: int,
     solver_type: str,
     time_limit: float,
-    scenario_value: int,
-) -> tuple[str, list]:
+    num_satellites_val: str,
+    instance_index: int,
+) -> tuple[str, str]:
     """Runs the optimization and updates UI accordingly.
 
     This is the main function which is called when the ``Run Optimization`` button is clicked.
@@ -115,26 +163,116 @@ def run_optimization(
         run_click: The (total) number of times the run button has been clicked.
         solver_type: The solver to use for the optimization run defined by SolverType in demo_enums.py.
         time_limit: The solver time limit.
-        scenario_value: The value of the scenario dropdown.
+        num_satellites_val: The number of satellites for the instance.
+        instance_index: The index of the specific instance within the file (0-based).
 
     Returns:
         A tuple containing:
 
         - str: The results to display in the results tab.
-        - list: List of the table rows for the problem details table.
+        - str: The comparison results to display in the compare tab.
     """
 
-    solver_type = SolverType(int(solver_type))
+    # solver_type is a list of selected values, e.g. ["0"], ["1"], or ["0", "1"]
+    run_stride = str(SolverType.STRIDE.value) in (solver_type or [])
+    run_pyomo = str(SolverType.PYOMO.value) in (solver_type or [])
+    n = int(num_satellites_val)
+    instance = get_instance(n, instance_index)
+
+    stride_result: dict = {}
+    pyomo_result: dict = {}
+
+    if run_stride:
+        try:
+            from src.stride import solve_instance as solve_stride
+            stride_result = solve_stride(instance, time_limit)
+        except Exception as exc:
+            stride_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
+
+    if run_pyomo:
+        try:
+            from src.pyomo import solve_instance as solve_pyomo
+            pyomo_result = solve_pyomo(instance, time_limit)
+        except Exception as exc:
+            pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
+
+    if run_stride:
+        stride_content = _result_section(instance, stride_result, "D-Wave Stride")
+    else:
+        stride_content = [html.P("D-Wave Stride was not selected for this run.",
+                                 className="compare-placeholder")]
+
+    if run_pyomo:
+        pyomo_content = _result_section(instance, pyomo_result, "Pyomo / IPOPT")
+    else:
+        pyomo_content = [html.P("Pyomo / IPOPT was not selected for this run.",
+                                className="compare-placeholder")]
+
+    return stride_content, pyomo_content
 
 
-    ###########################
-    ### YOUR CODE GOES HERE ###
-    ###########################
-
-
-    # Generates the problem details table on the results page.
-    problem_details_table = generate_table(
-        {"Solver": [solver_type.label], "Time Limit": [time_limit]}
+def _metric_card(label: str, value_str: str, color: str = "inherit") -> html.Div:
+    return html.Div(
+        className="metric-card",
+        children=[
+            html.Div(label, className="metric-label"),
+            html.Div(value_str, className="metric-value", style={"color": color}),
+        ],
     )
 
-    return "Put demo results here.", problem_details_table
+
+def _result_section(instance: dict, result: dict, solver_label: str) -> list:
+    """Build Dash components for a single solver result."""
+    n = instance["num_satellites"]
+    west = instance["boundaries"]["west_boundaries"]
+    east = instance["boundaries"]["east_boundaries"]
+    midpoints = compute_midpoints(instance["boundaries"])
+    positions = result.get("positions") or []
+
+    if result.get("error"):
+        return [html.Div(
+            className="solver-error",
+            children=[html.Strong(f"{solver_label} error: "), html.Span(result["error"])],
+        )]
+
+    z = result.get("objective") or 0.0
+    feasible = result.get("feasible", False)
+    solve_time = result.get("solve_time") or 0.0
+
+    fig = create_orbit_figure(
+        instance,
+        positions=positions if positions else None,
+        title=f"{solver_label} — Optimized Positions",
+    )
+
+    # Per-satellite table
+    table_data: dict[str, list] = {
+        "Satellite": [],
+        "Allowed range": [],
+        "Initial (midpoint)": [],
+        "Optimized position": [],
+        "Shift": [],
+    }
+    for i in range(n):
+        pos = positions[i] if positions else midpoints[i]
+        table_data["Satellite"].append(i)
+        table_data["Allowed range"].append(f"{west[i]:.1f}° – {east[i]:.1f}°")
+        table_data["Initial (midpoint)"].append(f"{midpoints[i]:.1f}°")
+        table_data["Optimized position"].append(f"{pos:.1f}°")
+        table_data["Shift"].append(f"{pos - midpoints[i]:+.1f}°")
+
+    return [
+        dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        html.Div(
+            className="metrics-row",
+            children=[
+                _metric_card("Objective (z)", f"{z:.3f}°",
+                             color="#4ade80" if z > 0 else "#f87171"),
+                _metric_card("Feasible", "Yes" if feasible else "No",
+                             color="#4ade80" if feasible else "#f87171"),
+                _metric_card("Solve time", f"{solve_time:.1f} s"),
+            ],
+        ),
+        html.H4("Per-Satellite Results", className="section-heading"),
+        generate_table(table_data),
+    ]

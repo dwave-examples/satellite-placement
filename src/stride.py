@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import pandas as pd
 import itertools
+
+import numpy as np
 
 from dwave.optimization import linprog
 from dwave.optimization import Model
 from dwave.optimization.mathematical import hstack, concatenate
-from dwave.system import LeapHybridNLSampler
+from dwave.system import StrideHybridSolver
 
 
 
@@ -91,41 +91,55 @@ def create_model(interferences, boundaries):
     model.lock()
     return model
 
-data = []
 
-for num in [5,10,20]:
-    file = 'satellite_instances_180_' + str(num) +'.json'
-    instances = load_instances(file)
-    for i in range(11):
-        instance = instances[i]
-        num_satellites = instance['num_satellites']
-        boundaries = instance['boundaries']
-        interferences = np.array(instance['interferences']).reshape(num_satellites, num_satellites)
+def solve_instance(instance: dict, time_limit: float) -> dict:
+    """Run the D-Wave NL Sampler on a satellite placement instance.
 
-        midpoints = []
-        east = boundaries['east_boundaries']
-        west = boundaries['west_boundaries']
-        for j in range(num_satellites):
-            midpoint = (east[j] + west[j])/2
-            midpoints.append(midpoint)
+    Args:
+        instance: Problem instance dict (num_satellites, boundaries, interferences).
+        time_limit: Solver time limit in seconds.
 
-        sorted_indices = [ind for ind, _ in sorted(enumerate(midpoints), key=lambda x: x[1])]
+    Returns:
+        Dict with keys: objective, positions, feasible, solve_time.
+        On error, includes an 'error' key with a message string.
+    """
+    import time as time_module
+    from src.utils import compute_midpoints, get_sorted_indices
 
-        time_limits = [120]
-        for time in time_limits:
-            model = create_model(interferences, boundaries)
-            model.states.resize(1)
-            model.x.set_state(0, sorted_indices)
+    num_satellites = instance["num_satellites"]
+    boundaries = instance["boundaries"]
+    interferences = np.array(instance["interferences"]).reshape(num_satellites, num_satellites)
 
-            solver = LeapHybridNLSampler()
-            solver.sample(model, time_limit = time, label = f'sat_{num}_{i}')
-            energy = model.objective.state()
-            print('energy', energy)
-            feas = all(sym.state() for sym in model.iter_constraints())
+    midpoints = compute_midpoints(boundaries)
+    sorted_indices = get_sorted_indices(midpoints)
 
-            data.append({'name': str(num_satellites)+'_'+str(i),
-                          'time_limit': time,
-                          'energy': energy,
-                          'feasibility': feas})
-            df = pd.DataFrame(data)
-            df.to_csv('nl_leap_satellite_initial-state.csv', index=False)
+    model = create_model(interferences, boundaries)
+    model.states.resize(1)
+    model.x.set_state(0, sorted_indices)
+
+    start = time_module.time()
+    solver = StrideHybridSolver()
+    solver.sample(model, time_limit=int(time_limit), label="satellite_placement_stride")
+    elapsed = time_module.time() - start
+
+    z_value = float(model.objective.state())
+    feasible = all(bool(sym.state()) for sym in model.iter_constraints())
+
+    x_perm = list(model.x.state(0))
+    sol = list(model.solution.state(0))
+
+    positions = [0.0] * num_satellites
+    for k, sat_idx in enumerate(x_perm):
+        positions[int(sat_idx)] = float(sol[k])
+
+    # lp.fun = c·x = -z (the model minimizes -z), so negate to get the
+    # actual minimum-separation value z that matches the Pyomo objective.
+    # sol[-1] is the LP variable for z and is always positive.
+    z_value = float(sol[-1])
+
+    return {
+        "objective": z_value,
+        "positions": positions,
+        "feasible": feasible,
+        "solve_time": elapsed,
+    }

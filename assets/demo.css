@@ -42,3 +42,75 @@ custom CSS can be added below.
   /****************************/
  /*** CUSTOM CSS GOES HERE ***/
 /****************************/
+
+/* Input tab */
+.input-description {
+    margin-bottom: 0.75rem;
+}
+.input-description h3 {
+    margin-bottom: 0.4rem;
+}
+.input-description p {
+    font-size: 0.88rem;
+    opacity: 0.8;
+    max-width: 680px;
+}
+
+.instance-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+/* Results tab */
+.solver-heading {
+    margin: 1rem 0 0.5rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+}
+
+.metrics-row {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin: 0.75rem 0 1.25rem;
+}
+
+.metric-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 6px;
+    padding: 0.6rem 1.1rem;
+    min-width: 130px;
+}
+.metric-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.60;
+    margin-bottom: 0.2rem;
+}
+.metric-value {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.section-heading {
+    margin: 1rem 0 0.4rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+}
+
+.solver-error {
+    padding: 0.75rem 1rem;
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.35);
+    border-radius: 6px;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+}

@@ -13,11 +13,14 @@
 # limitations under the License.
 
 
-import numpy as np
-import pandas as pd
-
-from pyomo.environ import ConcreteModel, RangeSet, Var, Objective, Constraint, Reals, minimize, SolverFactory
 import itertools
+
+import numpy as np
+
+from pyomo.environ import (
+    ConcreteModel, Constraint, Objective, RangeSet, Reals, SolverFactory,
+    Var, minimize, value,
+)
 
 
 def create_model(num_satellites, boundaries, interferences):
@@ -66,32 +69,50 @@ def create_model(num_satellites, boundaries, interferences):
 
     return model
 
-data = []
 
-for num in [5,10,20]:
-    file = 'satellite_instances_180_' + str(num) +'.json'
-    instances = load_instances(file)
-    for i in range(11):
-        instance = instances[i]
-        num_satellites = instance['num_satellites']
-        boundaries = instance['boundaries']
-        interferences = np.array(instance['interferences']).reshape(num_satellites, num_satellites)
-        model = create_model(num_satellites, boundaries, interferences)
-        print(f'model {i} created')
-        # model.pprint()
+def solve_instance(instance: dict, time_limit: float) -> dict:
+    """Run the Pyomo / IPOPT solver on a satellite placement instance.
 
-        time_limits = [30, 60]
-        for time in time_limits:
-            print('running with ', time, ' seconds')
-            solver = SolverFactory('ipopt')
-            solver.options['max_cpu_time'] = time
-            solver.solve(model)
+    Args:
+        instance: Problem instance dict (num_satellites, boundaries, interferences).
+        time_limit: Solver time limit in seconds.
 
-            energy = model.obj()
-            print("Objective value:", energy)
+    Returns:
+        Dict with keys: objective, positions, feasible, solve_time.
+        On error, includes an 'error' key with a message string.
+    """
+    import time as time_module
 
-            data.append({'name': str(num_satellites)+'_'+str(i),
-                'time_limit': time,
-                'energy': energy})
-            df = pd.DataFrame(data)
-            df.to_csv('pyomo_ipopt_satellite_initial.csv', index=False)
+    num_satellites = instance["num_satellites"]
+    boundaries = instance["boundaries"]
+    interferences = np.array(instance["interferences"]).reshape(num_satellites, num_satellites)
+
+    model = create_model(num_satellites, boundaries, interferences)
+
+    start = time_module.time()
+    solver = SolverFactory("ipopt")
+    if not solver.available():
+        raise RuntimeError(
+            "IPOPT solver not found on PATH. "
+            "Install it with: brew install ipopt  (macOS) or "
+            "apt install coinor-libipopt-dev  (Ubuntu/Debian)."
+        )
+    solver.options["max_cpu_time"] = time_limit
+    solver.solve(model)
+    elapsed = time_module.time() - start
+
+    try:
+        z_value = float(-value(model.obj))
+        positions = [float(value(model.thetas[i])) for i in range(1, num_satellites + 1)]
+        feasible = True
+    except Exception:
+        z_value = 0.0
+        positions = []
+        feasible = False
+
+    return {
+        "objective": z_value,
+        "positions": positions,
+        "feasible": feasible,
+        "solve_time": elapsed,
+    }
