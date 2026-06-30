@@ -315,6 +315,18 @@ def generate_table(table_data: dict[str, list]) -> html.Table:
     )
 
 
+def generate_instance_stats(instance_stats: dict) -> list[html.P]:
+    """Generate a Div containing statistics about the problem instance.
+
+    Args:
+        instance_stats: A dictionary of statistics about the problem instance.
+
+    Returns:
+        A list of HTML Ps containing the statistics about the problem instance.
+    """
+    return [html.P([html.B(key), value]) for key, value in instance_stats.items()]
+
+
 def create_interface() -> html.Div:
     """Create the main application interface."""
     return html.Div(
@@ -431,12 +443,32 @@ def create_interface() -> html.Div:
                                             html.Div(
                                                 className="tab-content-wrapper",
                                                 children=[
-                                                    dcc.Loading(
-                                                        parent_className="input",
-                                                        type="circle",
-                                                        color=THEME_COLOR,
-                                                        # A Dash callback (in app.py) will generate content in the Div below
-                                                        children=html.Div(id="input"),
+                                                    html.Div(
+                                                        id="input",
+                                                        children=[
+                                                            dcc.Loading(
+                                                                parent_className="input",
+                                                                type="circle",
+                                                                color=THEME_COLOR,
+                                                                children=dcc.Graph(
+                                                                    id="input-graph",
+                                                                    responsive=True,
+                                                                    config={"displayModeBar": False}
+                                                                ),
+                                                            ),
+                                                            html.Div(
+                                                                className="input-description",
+                                                                children=[
+                                                                    html.Div(id="instance-stats"),
+                                                                    html.P(
+                                                                        "Each arc shows a satellite's allowed angular range on the orbit. "
+                                                                        "Amber chords connect interfering pairs; the thicker the chord, "
+                                                                        "the stronger the interference. Hollow circles mark each satellite's "
+                                                                        "initial position (midpoint of its arc). "
+                                                                    ),
+                                                                ],
+                                                            ),
+                                                        ]
                                                     ),
                                                 ]
                                             )

@@ -32,7 +32,6 @@ def _deg_to_xy(deg: float, r: float = 1.0) -> tuple:
 def create_orbit_figure(
     instance: dict,
     positions: list = None,
-    title: str = "Satellite Orbit",
     show_interference: bool = True,
 ) -> go.Figure:
     """Create an orbital visualization for a satellite placement instance.
@@ -40,7 +39,6 @@ def create_orbit_figure(
     Args:
         instance: Problem instance dict (num_satellites, boundaries, interferences).
         positions: Optional optimized theta values; if None, shows midpoints only.
-        title: Figure title.
         show_interference: Whether to draw chord lines for interfering pairs.
 
     Returns:
@@ -68,7 +66,7 @@ def create_orbit_figure(
 
     # ── Degree tick labels ───────────────────────────────────────────────────────
     for deg in range(0, 360, 30):
-        xm, ym = _deg_to_xy(deg, r=1.20)
+        xm, ym = _deg_to_xy(deg, r=1.12)
         fig.add_trace(go.Scatter(
             x=[xm], y=[ym],
             mode="text",
@@ -164,12 +162,11 @@ def create_orbit_figure(
 
     # ── Layout ───────────────────────────────────────────────────────────────────
     fig.update_layout(
-        title=dict(text=title, x=0.5, font=dict(size=14, color="rgba(210,215,255,0.92)")),
-        xaxis=dict(visible=False, range=[-1.40, 1.40]),
-        yaxis=dict(visible=False, range=[-1.40, 1.40], scaleanchor="x", scaleratio=1),
+        xaxis=dict(visible=False, range=[-1.22, 1.22]),
+        yaxis=dict(visible=False, range=[-1.22, 1.22], scaleanchor="x", scaleratio=1),
         plot_bgcolor="rgba(7,7,22,0.97)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=10, r=10, t=45, b=10),
+        margin=dict(l=0, r=0, t=0, b=10),
         legend=dict(
             orientation="h",
             yanchor="top", y=-0.01,

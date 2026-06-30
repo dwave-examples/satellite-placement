@@ -18,8 +18,9 @@ import numpy as np
 import dash
 from dash import MATCH, dcc, html
 from dash.dependencies import Input, Output, State
+import plotly.graph_objects as go
 
-from demo_interface import generate_table
+from demo_interface import generate_instance_stats, generate_table
 from src.demo_enums import SolverType
 from src.utils import compute_midpoints, get_instance
 from src.plot import create_orbit_figure
@@ -57,13 +58,14 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> tuple[s
 
 
 @dash.callback(
-    Output("input", "children"),
+    Output("input-graph", "figure"),
+    Output("instance-stats", "children"),
     inputs=[
         Input("num-satellites-select", "value"),
         Input("instance-index-slider", "value"),
     ],
 )
-def render_input_state(num_satellites: str, instance_index: int) -> list:
+def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Figure, list]:
     """Render the problem-instance orbital diagram on the Input tab.
 
     Triggered on page load and whenever the instance selection changes.
@@ -73,7 +75,10 @@ def render_input_state(num_satellites: str, instance_index: int) -> list:
         instance_index: Index of the specific instance within the file (0-based).
 
     Returns:
-        A list of Dash components to display in the Input tab.
+        A tuple containing:
+
+        - go.Figure: The orbital diagram figure.
+        - list: The instance statistics.
     """
     n = int(num_satellites)
     instance = get_instance(n, instance_index)
@@ -81,7 +86,6 @@ def render_input_state(num_satellites: str, instance_index: int) -> list:
     west = boundaries["west_boundaries"]
     east = boundaries["east_boundaries"]
     interferences = np.array(instance["interferences"]).reshape(n, n)
-    midpoints = compute_midpoints(boundaries)
 
     # Count significant interference pairs
     n_pairs = int(np.sum(interferences > 0.1) // 2)
@@ -90,42 +94,22 @@ def render_input_state(num_satellites: str, instance_index: int) -> list:
 
     fig = create_orbit_figure(
         instance,
-        title=f"{n} Satellites — Instance {instance_index}",
         show_interference=True,
     )
 
-    return [
-        html.Div(
-            className="input-description",
-            children=[
-                html.H3("Problem Instance"),
-                html.P(
-                    "Each arc shows a satellite's allowed angular range on the orbit. "
-                    "Amber chords connect interfering pairs — the thicker the chord, "
-                    "the stronger the interference. Hollow circles mark each satellite's "
-                    "initial position (midpoint of its arc). "
-                    "Run the solver to find optimal placements that maximise the "
-                    "minimum separation between interfering pairs."
-                ),
-            ],
-        ),
-        dcc.Graph(figure=fig, config={"displayModeBar": False}),
-        html.Div(
-            className="instance-stats",
-            children=[
-                html.Div([html.Strong("Satellites: "), str(n)]),
-                html.Div([html.Strong("Interference pairs (d > 0.1): "), str(n_pairs)]),
-                html.Div([html.Strong("Avg arc width: "), f"{avg_arc:.1f}°"]),
-                html.Div([html.Strong("Avg arc coverage: "), f"{coverage:.1f}% of orbit"]),
-            ],
-        ),
-    ]
+    stats = {
+        "Satellites: ": str(n),
+        "Interference pairs (d > 0.1): ": str(n_pairs),
+        "Avg arc width: ": f"{avg_arc:.1f}°",
+        "Avg arc coverage: ": f"{coverage:.1f}% of orbit",
+    }
+
+    return fig, generate_instance_stats(stats)
 
 
 @dash.callback(
     Output("stride-results", "children"),
     Output("pyomo-results", "children"),
-    background=True,
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
@@ -143,6 +127,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> list:
         (Output("tabs", "value"), "input-tab", "input-tab"),  # Switch to input tab while running.
     ],
     cancel=[Input("cancel-button", "n_clicks")],
+    background=True,
     prevent_initial_call=True,
 )
 def run_optimization(
@@ -172,8 +157,6 @@ def run_optimization(
         - str: The results to display in the results tab.
         - str: The comparison results to display in the compare tab.
     """
-
-    # solver_type is a list of selected values, e.g. ["0"], ["1"], or ["0", "1"]
     run_stride = str(SolverType.STRIDE.value) in (solver_type or [])
     run_pyomo = str(SolverType.PYOMO.value) in (solver_type or [])
     n = int(num_satellites_val)
@@ -199,14 +182,12 @@ def run_optimization(
     if run_stride:
         stride_content = _result_section(instance, stride_result, "D-Wave Stride")
     else:
-        stride_content = [html.P("D-Wave Stride was not selected for this run.",
-                                 className="compare-placeholder")]
+        stride_content = dash.no_update
 
     if run_pyomo:
         pyomo_content = _result_section(instance, pyomo_result, "Pyomo / IPOPT")
     else:
-        pyomo_content = [html.P("Pyomo / IPOPT was not selected for this run.",
-                                className="compare-placeholder")]
+        pyomo_content = dash.no_update
 
     return stride_content, pyomo_content
 
@@ -242,7 +223,6 @@ def _result_section(instance: dict, result: dict, solver_label: str) -> list:
     fig = create_orbit_figure(
         instance,
         positions=positions if positions else None,
-        title=f"{solver_label} — Optimized Positions",
     )
 
     # Per-satellite table
