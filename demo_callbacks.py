@@ -16,11 +16,11 @@ from __future__ import annotations
 
 import numpy as np
 import dash
-from dash import MATCH, dcc, html
+from dash import MATCH, html
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 
-from demo_interface import generate_instance_stats, generate_table
+from demo_interface import generate_instance_stats, generate_results_layout
 from src.demo_enums import SolverType
 from src.utils import compute_midpoints, get_instance
 from src.plot import create_orbit_figure
@@ -192,22 +192,11 @@ def run_optimization(
     return stride_content, pyomo_content
 
 
-def _metric_card(label: str, value_str: str, color: str = "inherit") -> html.Div:
-    return html.Div(
-        className="metric-card",
-        children=[
-            html.Div(label, className="metric-label"),
-            html.Div(value_str, className="metric-value", style={"color": color}),
-        ],
-    )
-
-
 def _result_section(instance: dict, result: dict, solver_label: str) -> list:
     """Build Dash components for a single solver result."""
     n = instance["num_satellites"]
     west = instance["boundaries"]["west_boundaries"]
     east = instance["boundaries"]["east_boundaries"]
-    midpoints = compute_midpoints(instance["boundaries"])
     positions = result.get("positions") or []
 
     if result.get("error"):
@@ -218,7 +207,6 @@ def _result_section(instance: dict, result: dict, solver_label: str) -> list:
 
     z = result.get("objective") or 0.0
     feasible = result.get("feasible", False)
-    solve_time = result.get("solve_time") or 0.0
 
     fig = create_orbit_figure(
         instance,
@@ -229,30 +217,11 @@ def _result_section(instance: dict, result: dict, solver_label: str) -> list:
     table_data: dict[str, list] = {
         "Satellite": [],
         "Allowed range": [],
-        "Initial (midpoint)": [],
         "Optimized position": [],
-        "Shift": [],
     }
     for i in range(n):
-        pos = positions[i] if positions else midpoints[i]
         table_data["Satellite"].append(i)
         table_data["Allowed range"].append(f"{west[i]:.1f}° – {east[i]:.1f}°")
-        table_data["Initial (midpoint)"].append(f"{midpoints[i]:.1f}°")
-        table_data["Optimized position"].append(f"{pos:.1f}°")
-        table_data["Shift"].append(f"{pos - midpoints[i]:+.1f}°")
+        table_data["Optimized position"].append(f"{positions[i]:.1f}°")
 
-    return [
-        dcc.Graph(figure=fig, config={"displayModeBar": False}),
-        html.Div(
-            className="metrics-row",
-            children=[
-                _metric_card("Objective (z)", f"{z:.3f}°",
-                             color="#4ade80" if z > 0 else "#f87171"),
-                _metric_card("Feasible", "Yes" if feasible else "No",
-                             color="#4ade80" if feasible else "#f87171"),
-                _metric_card("Solve time", f"{solve_time:.1f} s"),
-            ],
-        ),
-        html.H4("Per-Satellite Results", className="section-heading"),
-        generate_table(table_data),
-    ]
+    return generate_results_layout(fig, z, feasible, table_data)

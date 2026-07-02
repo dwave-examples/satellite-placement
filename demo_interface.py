@@ -18,6 +18,7 @@ from enum import EnumMeta
 
 from dash import dcc, html
 import dash_mantine_components as dmc
+import plotly.graph_objects as go
 
 from demo_configs import (
     DESCRIPTION,
@@ -327,6 +328,59 @@ def generate_instance_stats(instance_stats: dict) -> list[html.P]:
     return [html.P([html.B(key), value]) for key, value in instance_stats.items()]
 
 
+def metric_card(label: str, value_str: str, color: str = "inherit") -> html.Div:
+    return html.Div(
+        className="metric-card",
+        children=[
+            html.Div(label, className="metric-label"),
+            html.Div(value_str, className="metric-value", style={"color": color}),
+        ],
+    )
+
+
+def generate_results_layout(fig: go.Figure, objective: float, feasible: bool, table_data: dict[str, list]) -> html.Div:
+    """Generate a Div containing the results of the optimization.
+
+    Args:
+        fig: A Plotly Figure representing the optimization results.
+        objective: The objective value of the optimization.
+        feasible: Whether the solution is feasible.
+        table_data: A dictionary containing per-satellite results.
+
+    Returns:
+        A Div containing the results of the optimization.
+    """
+    return html.Div(
+        className="results-layout",
+        children=[
+            dcc.Loading(
+                parent_className="results",
+                type="circle",
+                color=THEME_COLOR,
+                children=dcc.Graph(
+                    figure=fig,
+                    responsive=True,
+                    config={"displayModeBar": False}
+                ),
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        className="metrics-row",
+                        children=[
+                            metric_card("Objective (z)", f"{objective:.3f}°",
+                                            color="#4ade80" if objective > 0 else "#f87171"),
+                            metric_card("Feasible", "Yes" if feasible else "No",
+                                            color="#4ade80" if feasible else "#f87171"),
+                        ],
+                    ),
+                    generate_table(table_data),
+                ],
+            ),
+        ],
+    )
+
+
 def create_interface() -> html.Div:
     """Create the main application interface."""
     return html.Div(
@@ -480,14 +534,7 @@ def create_interface() -> html.Div:
                                         children=[
                                             html.Div(
                                                 className="tab-content-wrapper",
-                                                children=[
-                                                    dcc.Loading(
-                                                        parent_className="results",
-                                                        type="circle",
-                                                        color=THEME_COLOR,
-                                                        children=html.Div(id="stride-results"),
-                                                    ),
-                                                ],
+                                                children=html.Div(id="stride-results"),
                                             )
                                         ],
                                     ),
@@ -497,14 +544,7 @@ def create_interface() -> html.Div:
                                         children=[
                                             html.Div(
                                                 className="tab-content-wrapper",
-                                                children=[
-                                                    dcc.Loading(
-                                                        parent_className="results",
-                                                        type="circle",
-                                                        color=THEME_COLOR,
-                                                        children=html.Div(id="pyomo-results"),
-                                                    ),
-                                                ],
+                                                children=html.Div(id="pyomo-results"),
                                             )
                                         ],
                                     ),

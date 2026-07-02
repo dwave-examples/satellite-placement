@@ -39,11 +39,18 @@ custom CSS can be added below.
     width: 100%;
 }
 
-#input {
+#input,
+.results-layout {
     display: flex;
     align-items: center;
     height: 100%;
     background: rgb(7,7,22);
+}
+
+#stride-results,
+#pyomo-results {
+    width: 100%;
+    height: 100%;
 }
 
 .input-description {
@@ -54,11 +61,26 @@ custom CSS can be added below.
     color: white;
 }
 
-/* Results tab */
-.solver-heading {
-    margin: 1rem 0 0.5rem;
-    font-size: 1.1rem;
-    letter-spacing: 0.03em;
+.results-layout table {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    max-height: 50vh;
+    overflow-y: auto;
+    display: inline-block;
+}
+
+.results-layout thead {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    background: #141422;
+    border-radius: 6px;
+    position: sticky;
+    top: 0;
+}
+
+.results-layout td {
+    color: white;
 }
 
 .metrics-row {
@@ -70,7 +92,7 @@ custom CSS can be added below.
 
 .metric-card {
     background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.2);
     border-radius: 6px;
     padding: 0.6rem 1.1rem;
     min-width: 130px;
@@ -79,20 +101,12 @@ custom CSS can be added below.
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    opacity: 0.60;
+    color: white;
     margin-bottom: 0.2rem;
 }
 .metric-value {
     font-size: 1.3rem;
     font-weight: 600;
-}
-
-.section-heading {
-    margin: 1rem 0 0.4rem;
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.75;
 }
 
 .solver-error {
