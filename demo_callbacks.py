@@ -92,10 +92,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     avg_arc = float(np.mean([east[i] - west[i] for i in range(n)]))
     coverage = avg_arc / 360.0 * 100.0
 
-    fig = create_orbit_figure(
-        instance,
-        show_interference=True,
-    )
+    fig = create_orbit_figure(instance)
 
     stats = {
         "Satellites: ": str(n),

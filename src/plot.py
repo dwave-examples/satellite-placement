@@ -32,17 +32,15 @@ def _deg_to_xy(deg: float, r: float = 1.0) -> tuple:
 def create_orbit_figure(
     instance: dict,
     positions: list = None,
-    show_interference: bool = True,
 ) -> go.Figure:
     """Create an orbital visualization for a satellite placement instance.
 
     Args:
         instance: Problem instance dict (num_satellites, boundaries, interferences).
         positions: Optional optimized theta values; if None, shows midpoints only.
-        show_interference: Whether to draw chord lines for interfering pairs.
 
     Returns:
-        Plotly Figure.
+        A Plotly Figure of the orbital visualization.
     """
     num_satellites = instance["num_satellites"]
     boundaries = instance["boundaries"]
@@ -77,25 +75,24 @@ def create_orbit_figure(
         ))
 
     # ── Interference chords ──────────────────────────────────────────────────────
-    if show_interference:
-        max_d = float(interferences.max()) if interferences.max() > 0 else 1.0
-        for i in range(num_satellites):
-            for j in range(i + 1, num_satellites):
-                d = float(interferences[i][j])
-                if d < 0.1:
-                    continue
-                opacity = 0.07 + 0.40 * (d / max_d)
-                width = 0.6 + 1.8 * (d / max_d)
-                xi, yi = _deg_to_xy(midpoints[i])
-                xj, yj = _deg_to_xy(midpoints[j])
-                fig.add_trace(go.Scatter(
-                    x=[xi, xj], y=[yi, yj],
-                    mode="lines",
-                    line=dict(color=f"rgba(255,195,60,{opacity:.2f})", width=width),
-                    showlegend=False,
-                    hoverinfo="text",
-                    hovertext=f"Interference {i}↔{j}: {d:.3f}",
-                ))
+    max_d = float(interferences.max()) if interferences.max() > 0 else 1.0
+    for i in range(num_satellites):
+        for j in range(i + 1, num_satellites):
+            d = float(interferences[i][j])
+            if d < 0.1:
+                continue
+            opacity = 0.07 + 0.40 * (d / max_d)
+            width = 0.6 + 1.8 * (d / max_d)
+            xi, yi = _deg_to_xy(midpoints[i])
+            xj, yj = _deg_to_xy(midpoints[j])
+            fig.add_trace(go.Scatter(
+                x=[xi, xj], y=[yi, yj],
+                mode="lines",
+                line=dict(color=f"rgba(255,195,60,{opacity:.2f})", width=width),
+                showlegend=False,
+                hoverinfo="text",
+                hovertext=f"Interference {i}↔{j}: {d:.3f}",
+            ))
 
     # ── Satellite arcs (allowed ranges) ─────────────────────────────────────────
     r_arc = 1.055
@@ -162,7 +159,7 @@ def create_orbit_figure(
 
     # ── Layout ───────────────────────────────────────────────────────────────────
     fig.update_layout(
-        xaxis=dict(visible=False, range=[-1.22, 1.22]),
+        xaxis=dict(visible=False, range=[-1.22, 1.22], constrain="domain"),
         yaxis=dict(visible=False, range=[-1.22, 1.22], scaleanchor="x", scaleratio=1),
         plot_bgcolor="rgba(7,7,22,0.97)",
         paper_bgcolor="rgba(0,0,0,0)",

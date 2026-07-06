@@ -27,14 +27,7 @@ custom CSS can be added below.
     height: 100%;
 }
 
-.results {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-}
-
-.input {
+.input, .results {
     height: 100%;
     width: 100%;
 }
@@ -45,6 +38,7 @@ custom CSS can be added below.
     align-items: center;
     height: 100%;
     background: rgb(7,7,22);
+    padding: 0 3rem 3rem 0;
 }
 
 #stride-results,
