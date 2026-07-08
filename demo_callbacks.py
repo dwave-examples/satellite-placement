@@ -14,15 +14,19 @@
 
 from __future__ import annotations
 
+from demo_configs import STRIDE_TAB_LABEL, PYOMO_TAB_LABEL
 import numpy as np
 import dash
-from dash import MATCH, html
+from dash import MATCH, html, ctx
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
+from dash.exceptions import PreventUpdate
+
+
 
 from demo_interface import generate_instance_stats, generate_results_layout
 from src.demo_enums import SolverType
-from src.utils import compute_midpoints, get_instance
+from src.utils import get_instance
 from src.plot import create_orbit_figure
 
 
@@ -60,12 +64,15 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> tuple[s
 @dash.callback(
     Output("input-graph", "figure"),
     Output("instance-stats", "children"),
+    Output("stride-tab", "disabled"),
+    Output("pyomo-tab", "disabled"),
+    Output("tabs", "value"),
     inputs=[
         Input("num-satellites-select", "value"),
         Input("instance-index-slider", "value"),
     ],
 )
-def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Figure, list]:
+def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Figure, list, bool, bool, str]:
     """Render the problem-instance orbital diagram on the Input tab.
 
     Triggered on page load and whenever the instance selection changes.
@@ -79,6 +86,9 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
 
         - go.Figure: The orbital diagram figure.
         - list: The instance statistics.
+        - bool: Whether the Stride tab is disabled.
+        - bool: Whether the Pyomo tab is disabled.
+        - str: The tab to select.
     """
     n = int(num_satellites)
     instance = get_instance(n, instance_index)
@@ -101,12 +111,107 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
         "Avg arc coverage: ": f"{coverage:.1f}% of orbit",
     }
 
-    return fig, generate_instance_stats(stats)
+    return fig, generate_instance_stats(stats), True, True, "input-tab"
 
 
 @dash.callback(
-    Output("stride-results", "children"),
-    Output("pyomo-results", "children"),
+    Output("stride-tab", "children", allow_duplicate=True),
+    Output("stride-tab", "disabled", allow_duplicate=True),
+    Output("running-stride", "data", allow_duplicate=True),
+    Output("pyomo-tab", "children", allow_duplicate=True),
+    Output("pyomo-tab", "disabled", allow_duplicate=True),
+    Output("running-pyomo", "data", allow_duplicate=True),
+    Output("run-button", "style", allow_duplicate=True),
+    Output("cancel-button", "style", allow_duplicate=True),
+    Output("tabs", "value", allow_duplicate=True),
+    
+    [
+        Input("run-button", "n_clicks"),
+        Input("cancel-button", "n_clicks"),
+        State("solver-type-select", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def update_tab_loading_state(
+    run_click: int, cancel_click: int, solvers: list[str]
+) -> tuple[str, bool, bool, str, bool, bool, dict, dict, str]:
+    """Updates the tab loading state after the run button
+    or cancel button has been clicked.
+
+    Args:
+        run_click (int): The number of times the run button has been clicked.
+        cancel_click (int): The number of times the cancel button has been clicked.
+        solvers (list[str]): The list of selected solvers.
+
+    Returns:
+        str: The label for the Stride tab.
+        bool: True if Stride tab should be disabled, False otherwise.
+        bool: Whether this this a Stride run.
+        str: The label for the Pyomo tab.
+        bool: True if Pyomo tab should be disabled, False otherwise.
+        bool: Whether this is a Pyomo run.
+        dict: Run button style.
+        dict: Cancel button style.
+        str: The value of the tab that should be active.
+    """
+
+    if ctx.triggered_id == "run-button" and run_click > 0:
+        running = ("Loading...", True, True)
+        return (
+            *(running if f"{SolverType.STRIDE.value}" in solvers else [dash.no_update] * 3),
+            *(running if f"{SolverType.PYOMO.value}" in solvers else [dash.no_update] * 3),
+            {"display": "none"},
+            {},
+            "input-tab",
+        )
+
+    if ctx.triggered_id == "cancel-button" and cancel_click > 0:
+        return (
+            STRIDE_TAB_LABEL,
+            dash.no_update,
+            False,
+            PYOMO_TAB_LABEL,
+            dash.no_update,
+            False,
+            {},
+            {"display": "none"},
+            dash.no_update,
+        )
+    raise PreventUpdate
+
+
+@dash.callback(
+    Output("run-button", "style", allow_duplicate=True),
+    Output("cancel-button", "style", allow_duplicate=True),
+    background=True,
+    inputs=[
+        Input("running-stride", "data"),
+        Input("running-pyomo", "data"),
+    ],
+    prevent_initial_call=True,
+)
+def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple[dict, dict]:
+    """Updates the visibility of the run and cancel buttons.
+
+    Args:
+        running_stride (bool): Whether the Stride solver is running.
+        running_pyomo (bool): Whether the Pyomo solver is running.
+
+    Returns:
+        dict: Run button style.
+        dict: Cancel button style.
+    """
+    if not running_stride and not running_pyomo:
+        return {}, {"display": "none"}
+
+    return {"display": "none"}, {}
+
+
+@dash.callback(
+    Output("stride-results", "children", allow_duplicate=True),
+    Output("stride-tab", "children", allow_duplicate=True),
+    Output("stride-tab", "disabled", allow_duplicate=True),
+    Output("running-stride", "data", allow_duplicate=True),
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
@@ -114,26 +219,17 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
         State("num-satellites-select", "value"),
         State("instance-index-slider", "value"),
     ],
-    running=[
-        (Output("cancel-button", "style"), {}, {"display": "none"}),
-        (Output("run-button", "style"), {"display": "none"}, {}),
-        (Output("stride-tab", "disabled"), True, False),
-        (Output("pyomo-tab", "disabled"), True, False),
-        (Output("stride-tab", "children"), "Loading…", "Stride"),
-        (Output("pyomo-tab", "children"), "Loading…", "Pyomo"),
-        (Output("tabs", "value"), "input-tab", "input-tab"),  # Switch to input tab while running.
-    ],
     cancel=[Input("cancel-button", "n_clicks")],
     background=True,
     prevent_initial_call=True,
 )
-def run_optimization(
+def run_optimization_stride(
     run_click: int,
-    solver_type: str,
+    solvers: str,
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-) -> tuple[str, str]:
+    ) -> tuple[str, str, bool, bool]:
     """Runs the optimization and updates UI accordingly.
 
     This is the main function which is called when the ``Run Optimization`` button is clicked.
@@ -143,7 +239,7 @@ def run_optimization(
 
     Args:
         run_click: The (total) number of times the run button has been clicked.
-        solver_type: The solver to use for the optimization run defined by SolverType in demo_enums.py.
+        solvers: The solvers to use for the optimization run defined by SolverType in demo_enums.py.
         time_limit: The solver time limit.
         num_satellites_val: The number of satellites for the instance.
         instance_index: The index of the specific instance within the file (0-based).
@@ -151,42 +247,88 @@ def run_optimization(
     Returns:
         A tuple containing:
 
-        - str: The results to display in the results tab.
-        - str: The comparison results to display in the compare tab.
+        - str: The results to display in the Stride results tab.
+        - str: The label for the Stride tab.
+        - bool: Whether the Stride tab should be disabled.
+        - bool: Whether this is a Stride run.
     """
-    run_stride = str(SolverType.STRIDE.value) in (solver_type or [])
-    run_pyomo = str(SolverType.PYOMO.value) in (solver_type or [])
+    if f"{SolverType.STRIDE.value}" not in solvers:
+        return dash.no_update, STRIDE_TAB_LABEL, True, False
+
     n = int(num_satellites_val)
     instance = get_instance(n, instance_index)
 
     stride_result: dict = {}
+
+    try:
+        from src.stride import solve_instance as solve_stride
+        stride_result = solve_stride(instance, time_limit)
+    except Exception as exc:
+        stride_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
+
+    return _result_section(instance, stride_result, "D-Wave Stride"), STRIDE_TAB_LABEL, False, False
+
+
+@dash.callback(
+    Output("pyomo-results", "children", allow_duplicate=True),
+    Output("pyomo-tab", "children", allow_duplicate=True),
+    Output("pyomo-tab", "disabled", allow_duplicate=True),
+    Output("running-pyomo", "data", allow_duplicate=True),
+    inputs=[
+        Input("run-button", "n_clicks"),
+        State("solver-type-select", "value"),
+        State("solver-time-limit", "value"),
+        State("num-satellites-select", "value"),
+        State("instance-index-slider", "value"),
+    ],
+    cancel=[Input("cancel-button", "n_clicks")],
+    background=True,
+    prevent_initial_call=True,
+)
+def run_optimization_pyomo(
+    run_click: int,
+    solvers: str,
+    time_limit: float,
+    num_satellites_val: str,
+    instance_index: int,
+) -> tuple[str, str, bool, bool]:
+    """Runs the optimization and updates UI accordingly.
+
+    This is the main function which is called when the ``Run Optimization`` button is clicked.
+    This function takes in all form values and runs the optimization, updates the run/cancel
+    buttons, deactivates (and reactivates) the results tab, and updates all relevant HTML
+    components.
+
+    Args:
+        run_click: The (total) number of times the run button has been clicked.
+        solvers: The solvers to use for the optimization run defined by SolverType in demo_enums.py.
+        time_limit: The solver time limit.
+        num_satellites_val: The number of satellites for the instance.
+        instance_index: The index of the specific instance within the file (0-based).
+
+    Returns:
+        A tuple containing:
+
+        - str: The results to display in the Pyomo results tab.
+        - str: The label for the Pyomo tab.
+        - bool: Whether the Pyomo tab should be disabled.
+        - bool: Whether this is a Pyomo run.
+    """
+    if f"{SolverType.PYOMO.value}" not in solvers:
+        return dash.no_update, PYOMO_TAB_LABEL, True, False
+
+    n = int(num_satellites_val)
+    instance = get_instance(n, instance_index)
+
     pyomo_result: dict = {}
 
-    if run_stride:
-        try:
-            from src.stride import solve_instance as solve_stride
-            stride_result = solve_stride(instance, time_limit)
-        except Exception as exc:
-            stride_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
+    try:
+        from src.pyomo import solve_instance as solve_pyomo
+        pyomo_result = solve_pyomo(instance, time_limit)
+    except Exception as exc:
+        pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
 
-    if run_pyomo:
-        try:
-            from src.pyomo import solve_instance as solve_pyomo
-            pyomo_result = solve_pyomo(instance, time_limit)
-        except Exception as exc:
-            pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
-
-    if run_stride:
-        stride_content = _result_section(instance, stride_result, "D-Wave Stride")
-    else:
-        stride_content = dash.no_update
-
-    if run_pyomo:
-        pyomo_content = _result_section(instance, pyomo_result, "Pyomo / IPOPT")
-    else:
-        pyomo_content = dash.no_update
-
-    return stride_content, pyomo_content
+    return _result_section(instance, pyomo_result, "Pyomo / IPOPT"), PYOMO_TAB_LABEL, False, False
 
 
 def _result_section(instance: dict, result: dict, solver_label: str) -> list:

@@ -25,7 +25,9 @@ from demo_configs import (
     INSTANCE_INDEX,
     MAIN_HEADER,
     NUM_SATELLITES,
+    PYOMO_TAB_LABEL,
     SOLVER_TIME,
+    STRIDE_TAB_LABEL,
     THUMBNAIL,
 )
 from src.demo_enums import SolverType
@@ -398,7 +400,8 @@ def create_interface() -> html.Div:
                 tabIndex=1,
             ),
             # Below are any temporary storage items, e.g., for sharing data between callbacks.
-            dcc.Store(id="run-in-progress", data=False),  # Indicates whether run is in progress
+            dcc.Store(id="running-stride"),
+            dcc.Store(id="running-pyomo"),
             # Settings and results columns
             html.Main(
                 className="columns-main",
@@ -476,13 +479,13 @@ def create_interface() -> html.Div:
                                                         [
                                                             dmc.TabsTab("Input", value="input-tab"),
                                                             dmc.TabsTab(
-                                                                "Stride",
+                                                                STRIDE_TAB_LABEL,
                                                                 value="stride-tab",
                                                                 id="stride-tab",
                                                                 disabled=True,
                                                             ),
                                                             dmc.TabsTab(
-                                                                "Pyomo",
+                                                                PYOMO_TAB_LABEL,
                                                                 value="pyomo-tab",
                                                                 id="pyomo-tab",
                                                                 disabled=True,

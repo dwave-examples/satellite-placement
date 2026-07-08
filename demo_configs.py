@@ -24,6 +24,9 @@ between every interfering pair is as large as possible, while keeping each
 satellite within its allowed arc.
 """
 
+STRIDE_TAB_LABEL = "Stride"
+PYOMO_TAB_LABEL = "Pyomo"
+
 #######################################
 # Sliders, buttons and option entries #
 #######################################
