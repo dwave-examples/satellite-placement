@@ -3,5 +3,6 @@
 	// Debian stable with the second-latest Python, latest Ocean, and optional dev packages.
 	// Docker image source: https://github.com/dwavesystems/ocean-dev-docker.
 	// Devcontainer config: https://github.com/dwavesystems/ocean-devcontainer.
-	"image": "docker.io/dwavesys/ocean-dev:latest"
+	"image": "docker.io/dwavesys/ocean-dev:latest",
+	"postCreateCommand": "sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends coinor-ipopt coinor-libipopt-dev && pip install -r requirements.txt"
 }
