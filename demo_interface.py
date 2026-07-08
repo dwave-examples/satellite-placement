@@ -351,16 +351,19 @@ def generate_results_layout(fig: go.Figure, objective: float, feasible: bool, ta
         A Div containing the results of the optimization.
     """
     return html.Div(
-        className="results-layout",
+        className="graph-layout",
         children=[
             dcc.Loading(
-                parent_className="results",
+                parent_className="graph-loading",
                 type="circle",
                 color=THEME_COLOR,
-                children=dcc.Graph(
-                    figure=fig,
-                    responsive=True,
-                    config={"displayModeBar": False}
+                children=html.Div(
+                    dcc.Graph(
+                        figure=fig,
+                        responsive=True,
+                        config={"displayModeBar": False}
+                    ),
+                    className="graph-wrapper"
                 ),
             ),
             html.Div(
@@ -376,6 +379,7 @@ def generate_results_layout(fig: go.Figure, objective: float, feasible: bool, ta
                     ),
                     generate_table(table_data),
                 ],
+                className="graph-details",
             ),
         ],
     )
@@ -498,20 +502,23 @@ def create_interface() -> html.Div:
                                                 className="tab-content-wrapper",
                                                 children=[
                                                     html.Div(
-                                                        id="input",
+                                                        className="graph-layout",
                                                         children=[
                                                             dcc.Loading(
-                                                                parent_className="input",
+                                                                parent_className="graph-loading",
                                                                 type="circle",
                                                                 color=THEME_COLOR,
-                                                                children=dcc.Graph(
-                                                                    id="input-graph",
-                                                                    responsive=True,
-                                                                    config={"displayModeBar": False}
+                                                                children=html.Div(
+                                                                    dcc.Graph(
+                                                                        id="input-graph",
+                                                                        responsive=True,
+                                                                        config={"displayModeBar": False}
+                                                                    ),
+                                                                    className="graph-wrapper"
                                                                 ),
                                                             ),
                                                             html.Div(
-                                                                className="input-description",
+                                                                className="graph-details",
                                                                 children=[
                                                                     html.Div(id="instance-stats"),
                                                                     html.P(

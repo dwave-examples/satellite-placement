@@ -27,13 +27,12 @@ custom CSS can be added below.
     height: 100%;
 }
 
-.input, .results {
+.graph-loading {
     height: 100%;
     width: 100%;
 }
 
-#input,
-.results-layout {
+.graph-layout {
     display: flex;
     align-items: center;
     height: 100%;
@@ -41,21 +40,25 @@ custom CSS can be added below.
     padding: 0 3rem 3rem 0;
 }
 
-#stride-results,
-#pyomo-results {
+.graph-wrapper {
     width: 100%;
     height: 100%;
 }
 
-.input-description {
-    width: 40rem;
+#stride-results,
+#pyomo-results {
+    height: 100%;
 }
 
-.input-description p {
+.graph-details {
+    flex-basis: 40rem;
+}
+
+.graph-details p {
     color: white;
 }
 
-.results-layout table {
+.graph-layout table {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
     max-height: 50vh;
@@ -63,7 +66,7 @@ custom CSS can be added below.
     display: inline-block;
 }
 
-.results-layout thead {
+.graph-layout thead {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
@@ -73,7 +76,7 @@ custom CSS can be added below.
     top: 0;
 }
 
-.results-layout td {
+.graph-layout td {
     color: white;
 }
 
@@ -91,6 +94,7 @@ custom CSS can be added below.
     padding: 0.6rem 1.1rem;
     min-width: 130px;
 }
+
 .metric-label {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -98,6 +102,7 @@ custom CSS can be added below.
     color: white;
     margin-bottom: 0.2rem;
 }
+
 .metric-value {
     font-size: 1.3rem;
     font-weight: 600;
