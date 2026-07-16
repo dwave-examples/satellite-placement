@@ -71,7 +71,7 @@ def create_model(num_satellites, boundaries, interferences):
 
 
 def solve_instance(instance: dict, time_limit: float) -> dict:
-    """Run the Pyomo / IPOPT solver on a satellite placement instance.
+    """Run the Pyomo / Ipopt solver on a satellite placement instance.
 
     Args:
         instance: Problem instance dict (num_satellites, boundaries, interferences).
@@ -93,7 +93,7 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
     solver = SolverFactory("ipopt")
     if not solver.available():
         raise RuntimeError(
-            "IPOPT solver not found on PATH. "
+            "Ipopt solver not found on PATH. "
             "Install it with: brew install ipopt  (macOS) or "
             "apt install coinor-libipopt-dev  (Ubuntu/Debian)."
         )

@@ -124,7 +124,6 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     Output("run-button", "style", allow_duplicate=True),
     Output("cancel-button", "style", allow_duplicate=True),
     Output("tabs", "value", allow_duplicate=True),
-    
     [
         Input("run-button", "n_clicks"),
         Input("cancel-button", "n_clicks"),
@@ -144,15 +143,17 @@ def update_tab_loading_state(
         solvers (list[str]): The list of selected solvers.
 
     Returns:
-        str: The label for the Stride tab.
-        bool: True if Stride tab should be disabled, False otherwise.
-        bool: Whether this this a Stride run.
-        str: The label for the Pyomo tab.
-        bool: True if Pyomo tab should be disabled, False otherwise.
-        bool: Whether this is a Pyomo run.
-        dict: Run button style.
-        dict: Cancel button style.
-        str: The value of the tab that should be active.
+        A tuple containing:
+
+        - str: The label for the Stride tab.
+        - bool: True if Stride tab should be disabled, False otherwise.
+        - bool: Whether this this a Stride run.
+        - str: The label for the Pyomo tab.
+        - bool: True if Pyomo tab should be disabled, False otherwise.
+        - bool: Whether this is a Pyomo run.
+        - dict: Run button style.
+        - dict: Cancel button style.
+        - str: The value of the tab that should be active.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
@@ -198,8 +199,10 @@ def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple
         running_pyomo (bool): Whether the Pyomo solver is running.
 
     Returns:
-        dict: Run button style.
-        dict: Cancel button style.
+        A tuple containing:
+
+        - dict: Run button style.
+        - dict: Cancel button style.
     """
     if not running_stride and not running_pyomo:
         return {}, {"display": "none"}
@@ -328,7 +331,7 @@ def run_optimization_pyomo(
     except Exception as exc:
         pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
 
-    return _result_section(instance, pyomo_result, "Pyomo / IPOPT"), PYOMO_TAB_LABEL, False, False
+    return _result_section(instance, pyomo_result, "Pyomo / Ipopt"), PYOMO_TAB_LABEL, False, False
 
 
 def _result_section(instance: dict, result: dict, solver_label: str) -> list:
