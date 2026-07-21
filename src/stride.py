@@ -119,7 +119,7 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
 
     start = time_module.time()
     solver = StrideHybridSolver()
-    solver.sample(model, time_limit=int(time_limit), label="satellite_placement_stride")
+    solver.sample(model, time_limit=int(time_limit), label="Example - Satellite Placement")
     elapsed = time_module.time() - start
 
     z_value = float(model.objective.state())

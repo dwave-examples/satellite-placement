@@ -69,12 +69,15 @@ def create_orbit_figure(
             x=[xm], y=[ym],
             mode="text",
             text=[f"{deg}°"],
-            textfont=dict(size=9, color="rgba(160,165,210,0.55)"),
+            textfont=dict(size=9, color="rgba(160,165,210,0.8)"),
             showlegend=False,
             hoverinfo="skip",
         ))
 
     # ── Interference chords ──────────────────────────────────────────────────────
+    # Anchor chords to the optimized positions on results plots; fall back to the
+    # midpoints for the input/instance view where no solution exists yet.
+    chord_pts = positions if positions else midpoints
     max_d = float(interferences.max()) if interferences.max() > 0 else 1.0
     for i in range(num_satellites):
         for j in range(i + 1, num_satellites):
@@ -83,8 +86,8 @@ def create_orbit_figure(
                 continue
             opacity = 0.07 + 0.40 * (d / max_d)
             width = 0.6 + 1.8 * (d / max_d)
-            xi, yi = _deg_to_xy(midpoints[i])
-            xj, yj = _deg_to_xy(midpoints[j])
+            xi, yi = _deg_to_xy(chord_pts[i])
+            xj, yj = _deg_to_xy(chord_pts[j])
             fig.add_trace(go.Scatter(
                 x=[xi, xj], y=[yi, yj],
                 mode="lines",
@@ -114,44 +117,40 @@ def create_orbit_figure(
         ))
 
     # ── Initial positions (hollow circles) ──────────────────────────────────────
-    for i in range(num_satellites):
-        xm, ym = _deg_to_xy(midpoints[i], r=r_arc)
-        fig.add_trace(go.Scatter(
-            x=[xm], y=[ym],
-            mode="markers+text",
-            marker=dict(
-                color=sat_color(i), size=14,
-                symbol="circle-open",
-                line=dict(width=2.5, color=sat_color(i)),
-            ),
-            text=[f"  {i}"],
-            textposition="middle right",
-            textfont=dict(size=11, color=sat_color(i)),
-            showlegend=False,
-            hoverinfo="text",
-            hovertext=f"Satellite {i} initial: {midpoints[i]:.1f}°",
-        ))
+    if not positions:  # Only shown on the input/instance view.
+        for i in range(num_satellites):
+            xm, ym = _deg_to_xy(midpoints[i], r=r_arc)
+            fig.add_trace(go.Scatter(
+                x=[xm], y=[ym],
+                mode="markers+text",
+                marker=dict(
+                    color=sat_color(i), size=14,
+                    symbol="circle-open",
+                    line=dict(width=2.5, color=sat_color(i)),
+                ),
+                text=[f"  {i}"],
+                textposition="middle right",
+                textfont=dict(size=14, color=sat_color(i)),
+                showlegend=False,
+                hoverinfo="text",
+                hovertext=f"Satellite {i} initial: {midpoints[i]:.1f}°",
+            ))
 
-    # ── Optimized positions (filled circles + arrows) ────────────────────────────
+    # ── Optimized positions (filled circles) ─────────────────────────────────────
     if positions:
         for i in range(num_satellites):
             xp, yp = _deg_to_xy(positions[i], r=r_arc)
-            xm, ym = _deg_to_xy(midpoints[i], r=r_arc)
-            if abs(xp - xm) > 0.006 or abs(yp - ym) > 0.006:
-                fig.add_annotation(
-                    x=xp, y=yp, ax=xm, ay=ym,
-                    xref="x", yref="y", axref="x", ayref="y",
-                    showarrow=True, arrowhead=3,
-                    arrowwidth=1.8, arrowcolor=sat_color(i), arrowsize=0.9,
-                )
             fig.add_trace(go.Scatter(
                 x=[xp], y=[yp],
-                mode="markers",
+                mode="markers+text",
                 marker=dict(
                     color=sat_color(i), size=17,
                     symbol="circle",
                     line=dict(width=2.5, color="white"),
                 ),
+                text=[f"  {i}"],
+                textposition="middle right",
+                textfont=dict(size=14, color=sat_color(i)),
                 showlegend=False,
                 hoverinfo="text",
                 hovertext=f"Satellite {i} → {positions[i]:.1f}°",

@@ -253,7 +253,7 @@ def generate_settings_form() -> html.Div:
                 sorted(num_sat_options, key=lambda op: int(op["value"])),
             ),
             slider(
-                "Instance Index",
+                "Scenario",
                 "instance-index-slider",
                 INSTANCE_INDEX,
             ),
