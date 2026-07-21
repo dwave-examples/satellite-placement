@@ -24,6 +24,6 @@ class SolverType(Enum):
     @property
     def label(self):
         return {
-            SolverType.STRIDE: "Stride Hybrid Solver",
-            SolverType.PYOMO: "Pyomo with IPOpt",
+            SolverType.STRIDE: "Stride\u2122 Hybrid Solver",
+            SolverType.PYOMO: "Pyomo with Ipopt",
         }[self]

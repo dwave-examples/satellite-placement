@@ -116,3 +116,9 @@ custom CSS can be added below.
     margin: 0.5rem 0;
     font-size: 0.9rem;
 }
+
+.improvement-stat {
+    padding: 12px 16px;
+    background: rgba(74, 222, 128, 0.12);
+    font-weight: 600;
+}

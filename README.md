@@ -21,7 +21,7 @@ For development environments that do not support `devcontainers`, install requir
 pip install -r requirements.txt
 ```
 
-IPOpt (required to run the classical comparison) must also be installed separately, using one of the
+Ipopt (required to run the classical comparison) must also be installed separately, using one of the
 following commands:
 
 | Platform | Command |

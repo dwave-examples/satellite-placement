@@ -402,6 +402,8 @@ def create_interface() -> html.Div:
             # Below are any temporary storage items, e.g., for sharing data between callbacks.
             dcc.Store(id="running-stride"),
             dcc.Store(id="running-pyomo"),
+            dcc.Store(id="stride-objective"),
+            dcc.Store(id="pyomo-objective"),
             # Settings and results columns
             html.Main(
                 className="columns-main",
@@ -544,7 +546,10 @@ def create_interface() -> html.Div:
                                         children=[
                                             html.Div(
                                                 className="tab-content-wrapper",
-                                                children=html.Div(id="stride-results"),
+                                                children=[
+                                                    html.Div(id="stride-improvement"),
+                                                    html.Div(id="stride-results"),
+                                                ],
                                             )
                                         ],
                                     ),

@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import math
+
 from demo_configs import STRIDE_TAB_LABEL, PYOMO_TAB_LABEL
 import numpy as np
 import dash
@@ -28,6 +30,23 @@ from demo_interface import generate_instance_stats, generate_results_layout
 from src.demo_enums import SolverType
 from src.utils import get_instance
 from src.plot import create_orbit_figure
+
+
+_SUPERSCRIPT = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
+
+
+def _format_orderings(n: int) -> str:
+    """Format the number of distinct satellite orderings (n!/2) for display.
+
+    The Stride formulation searches over permutations of the satellites, so this
+    conveys the combinatorial size of the problem's search space.
+    """
+    orderings = math.factorial(n) // 2
+    if orderings < 1_000_000:
+        return f"{orderings:,}"
+    exp = len(str(orderings)) - 1
+    mantissa = orderings / 10 ** exp
+    return f"{mantissa:.1f} × 10{str(exp).translate(_SUPERSCRIPT)}"
 
 
 @dash.callback(
@@ -106,6 +125,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
 
     stats = {
         "Satellites: ": str(n),
+        "Possible orderings (n!/2): ": _format_orderings(n),
         "Interference pairs (d > 0.1): ": str(n_pairs),
         "Avg arc width: ": f"{avg_arc:.1f}°",
         "Avg arc coverage: ": f"{coverage:.1f}% of orbit",
@@ -124,6 +144,8 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     Output("run-button", "style", allow_duplicate=True),
     Output("cancel-button", "style", allow_duplicate=True),
     Output("tabs", "value", allow_duplicate=True),
+    Output("stride-objective", "data", allow_duplicate=True),
+    Output("pyomo-objective", "data", allow_duplicate=True),
     [
         Input("run-button", "n_clicks"),
         Input("cancel-button", "n_clicks"),
@@ -164,6 +186,8 @@ def update_tab_loading_state(
             {"display": "none"},
             {},
             "input-tab",
+            None,  # clear stale stride objective at run start
+            None,  # clear stale pyomo objective at run start
         )
 
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
@@ -176,6 +200,8 @@ def update_tab_loading_state(
             False,
             {},
             {"display": "none"},
+            dash.no_update,
+            dash.no_update,
             dash.no_update,
         )
     raise PreventUpdate
@@ -215,6 +241,7 @@ def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple
     Output("stride-tab", "children", allow_duplicate=True),
     Output("stride-tab", "disabled", allow_duplicate=True),
     Output("running-stride", "data", allow_duplicate=True),
+    Output("stride-objective", "data", allow_duplicate=True),
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
@@ -256,7 +283,7 @@ def run_optimization_stride(
         - bool: Whether this is a Stride run.
     """
     if f"{SolverType.STRIDE.value}" not in solvers:
-        return dash.no_update, STRIDE_TAB_LABEL, True, False
+        return dash.no_update, STRIDE_TAB_LABEL, True, False, None
 
     n = int(num_satellites_val)
     instance = get_instance(n, instance_index)
@@ -269,7 +296,9 @@ def run_optimization_stride(
     except Exception as exc:
         stride_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
 
-    return _result_section(instance, stride_result, "D-Wave Stride"), STRIDE_TAB_LABEL, False, False
+    stride_z = stride_result.get("objective") if stride_result.get("feasible") else None
+
+    return _result_section(instance, stride_result, "D-Wave Stride"), STRIDE_TAB_LABEL, False, False, stride_z
 
 
 @dash.callback(
@@ -277,6 +306,7 @@ def run_optimization_stride(
     Output("pyomo-tab", "children", allow_duplicate=True),
     Output("pyomo-tab", "disabled", allow_duplicate=True),
     Output("running-pyomo", "data", allow_duplicate=True),
+    Output("pyomo-objective", "data", allow_duplicate=True),
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
@@ -318,7 +348,7 @@ def run_optimization_pyomo(
         - bool: Whether this is a Pyomo run.
     """
     if f"{SolverType.PYOMO.value}" not in solvers:
-        return dash.no_update, PYOMO_TAB_LABEL, True, False
+        return dash.no_update, PYOMO_TAB_LABEL, True, False, None
 
     n = int(num_satellites_val)
     instance = get_instance(n, instance_index)
@@ -331,7 +361,47 @@ def run_optimization_pyomo(
     except Exception as exc:
         pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
 
-    return _result_section(instance, pyomo_result, "Pyomo / Ipopt"), PYOMO_TAB_LABEL, False, False
+    pyomo_z = pyomo_result.get("objective") if pyomo_result.get("feasible") else None
+
+    return _result_section(instance, pyomo_result, "Pyomo / Ipopt"), PYOMO_TAB_LABEL, False, False, pyomo_z
+
+
+@dash.callback(
+    Output("stride-improvement", "children"),
+    inputs=[
+        Input("stride-objective", "data"),
+        Input("pyomo-objective", "data"),
+    ],
+    prevent_initial_call=True,
+)
+def show_stride_improvement(stride_z: float | None, pyomo_z: float | None) -> list | None:
+    """Show a banner on the Stride tab when Stride beat Pyomo / Ipopt.
+
+    Only rendered when both solvers produced a feasible objective and Stride's
+    minimum separation is strictly larger than Pyomo's.
+
+    Args:
+        stride_z: Stride's objective value, or None if it did not run/was infeasible.
+        pyomo_z: Pyomo's objective value, or None if it did not run/was infeasible.
+
+    Returns:
+        The improvement banner components, or None when there is nothing to show.
+    """
+    if not stride_z or not pyomo_z or pyomo_z <= 0 or stride_z <= pyomo_z:
+        return None
+
+    pct = (stride_z - pyomo_z) / pyomo_z * 100.0
+
+    return html.Div(
+        className="improvement-stat",
+        children=[
+            html.Span("▲ "),
+            html.Span(
+                f"Stride improved the minimum separation by {pct:.1f}% over Pyomo / Ipopt "
+                f"({stride_z:.2f}° vs {pyomo_z:.2f}°)."
+            ),
+        ],
+    )
 
 
 def _result_section(instance: dict, result: dict, solver_label: str) -> list:
@@ -342,10 +412,12 @@ def _result_section(instance: dict, result: dict, solver_label: str) -> list:
     positions = result.get("positions") or []
 
     if result.get("error"):
-        return [html.Div(
-            className="solver-error",
-            children=[html.Strong(f"{solver_label} error: "), html.Span(result["error"])],
-        )]
+        return [
+            html.Div(
+                className="solver-error",
+                children=[html.Strong(f"{solver_label} error: "), html.Span(result["error"])],
+            )
+        ]
 
     z = result.get("objective") or 0.0
     feasible = result.get("feasible", False)
