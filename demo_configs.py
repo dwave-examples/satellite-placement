@@ -25,14 +25,14 @@ satellite within its allowed arc.
 """
 
 STRIDE_TAB_LABEL = "Stride"
-PYOMO_TAB_LABEL = "Pyomo"
+PYOMO_TAB_LABEL = "Pyomo / Ipopt"
 
 #######################################
 # Sliders, buttons and option entries #
 #######################################
 
 # Number of satellites per instance file
-NUM_SATELLITES = [5, 10, 20]
+NUM_SATELLITES = [5, 10, 20, 30]
 
 # Index of the specific instance within the file (0-based)
 INSTANCE_INDEX = {
