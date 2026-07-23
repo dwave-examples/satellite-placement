@@ -11,8 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# =============================================================================
+
 """This example is based on a project by Booz Allen Hamilton researchers
 [#btkrd]. See also link_.
 
@@ -22,7 +21,7 @@ sum of the average coverage within each constellation is maximized.
 There are two versions of the data. The first version runs quickly with
 Simulated Annealing. The second version is designed for Hybrid Solver Service.
 To run the first one, provide the input file 'small.json' and the solver
-name 'neal'. To run the second one, provide the input file 'large.json' and
+name 'sa'. To run the second one, provide the input file 'large.json' and
 the solver name 'hss'.
 
 .. _link: https://www.dwavesys.com/media/2t2naqik/quantumforsatellitesqubits-4_0.pdf
@@ -37,11 +36,10 @@ import argparse
 import itertools
 import json
 import math
-import sys
 
-import matplotlib.pyplot as plt
 import dimod
-import neal
+import matplotlib.pyplot as plt
+from dwave.samplers import SimulatedAnnealingSampler
 from dwave.system import LeapHybridSampler
 
 def read_in_args():
@@ -149,8 +147,8 @@ if __name__ == '__main__':
     if args.solver == 'hss':
         sampleset = LeapHybridSampler().sample(bqm,
                             label='Example - Satellite Placement').aggregate()
-    elif args.solver == 'neal':
-        sampleset = neal.Neal().sample(bqm, num_reads=100).aggregate()
+    elif args.solver == 'sa':
+        sampleset = SimulatedAnnealingSampler().sample(bqm, num_reads=100).aggregate()
     else:
         print("satellite.py: Unrecognized solver")
         exit(1)

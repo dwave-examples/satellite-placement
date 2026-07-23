@@ -26,7 +26,7 @@ class TestSmoke(unittest.TestCase):
 
         file_path = os.path.join(example_dir, 'satellite.py')
         data_path = os.path.join(example_dir, 'small.json')
-        solver = 'neal'
+        solver = 'sa'
         viz = False
 
         output = subprocess.check_output([sys.executable, file_path, data_path, solver])
