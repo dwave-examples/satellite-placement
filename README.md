@@ -26,7 +26,7 @@ To run the smaller demo, using D-Wave's Simulated Annealing package (Neal),
 run the command:
 
 ```bash
-python satellite.py small.json neal
+python satellite.py small.json sa
 ```
 
 To run the larger demo, using D-Wave's Hybrid Solver Service (HSS),

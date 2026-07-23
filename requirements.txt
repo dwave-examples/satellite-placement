@@ -1,2 +1,2 @@
-dwave-ocean-sdk>=3.3.0
+dwave-ocean-sdk>=6.1.0      # first version that includes dwave-samplers
 matplotlib>=3.3.4
