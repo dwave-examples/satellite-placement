@@ -122,3 +122,27 @@ custom CSS can be added below.
     background: rgba(74, 222, 128, 0.12);
     font-weight: 600;
 }
+
+.quality-meter {
+    margin: 0.25rem 0 1rem;
+}
+
+.quality-meter-track {
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    overflow: hidden;
+}
+
+.quality-meter-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+.quality-meter-caption {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: white;
+}

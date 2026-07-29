@@ -117,7 +117,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     interferences = np.array(instance["interferences"]).reshape(n, n)
 
     # Count significant interference pairs
-    n_pairs = int(np.sum(interferences > 0.1) // 2)
+    n_pairs = int(np.sum(np.triu(interferences, k=1) > 0.1))
     avg_arc = float(np.mean([east[i] - west[i] for i in range(n)]))
     coverage = avg_arc / 360.0 * 100.0
 
@@ -126,7 +126,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     stats = {
         "Satellites: ": str(n),
         "Possible orderings (n!/2): ": _format_orderings(n),
-        "Interference pairs (d > 0.1): ": str(n_pairs),
+        "Significant interference pairs: ": str(n_pairs),
         "Avg arc width: ": f"{avg_arc:.1f}°",
         "Avg arc coverage: ": f"{coverage:.1f}% of orbit",
     }
@@ -144,8 +144,8 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     Output("run-button", "style", allow_duplicate=True),
     Output("cancel-button", "style", allow_duplicate=True),
     Output("tabs", "value", allow_duplicate=True),
-    Output("stride-objective", "data", allow_duplicate=True),
-    Output("pyomo-objective", "data", allow_duplicate=True),
+    Output("stride-solution", "data", allow_duplicate=True),
+    Output("pyomo-solution", "data", allow_duplicate=True),
     [
         Input("run-button", "n_clicks"),
         Input("cancel-button", "n_clicks"),
@@ -186,8 +186,8 @@ def update_tab_loading_state(
             {"display": "none"},
             {},
             "input-tab",
-            None,  # clear stale stride objective at run start
-            None,  # clear stale pyomo objective at run start
+            None,  # clear stale stride solution at run start
+            None,  # clear stale pyomo solution at run start
         )
 
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
@@ -241,7 +241,7 @@ def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple
     Output("stride-tab", "children", allow_duplicate=True),
     Output("stride-tab", "disabled", allow_duplicate=True),
     Output("running-stride", "data", allow_duplicate=True),
-    Output("stride-objective", "data", allow_duplicate=True),
+    Output("stride-solution", "data", allow_duplicate=True),
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
@@ -296,9 +296,15 @@ def run_optimization_stride(
     except Exception as exc:
         stride_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
 
-    stride_z = stride_result.get("objective") if stride_result.get("feasible") else None
+    stride_solution = _solution_store_entry(stride_result)
 
-    return _result_section(instance, stride_result, "D-Wave Stride"), STRIDE_TAB_LABEL, False, False, stride_z
+    return (
+        _result_section(instance, stride_result, "D-Wave Stride"),
+        STRIDE_TAB_LABEL,
+        False,
+        False,
+        stride_solution,
+    )
 
 
 @dash.callback(
@@ -306,7 +312,7 @@ def run_optimization_stride(
     Output("pyomo-tab", "children", allow_duplicate=True),
     Output("pyomo-tab", "disabled", allow_duplicate=True),
     Output("running-pyomo", "data", allow_duplicate=True),
-    Output("pyomo-objective", "data", allow_duplicate=True),
+    Output("pyomo-solution", "data", allow_duplicate=True),
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-type-select", "value"),
@@ -361,32 +367,42 @@ def run_optimization_pyomo(
     except Exception as exc:
         pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
 
-    pyomo_z = pyomo_result.get("objective") if pyomo_result.get("feasible") else None
+    pyomo_solution = _solution_store_entry(pyomo_result)
 
-    return _result_section(instance, pyomo_result, "Pyomo / Ipopt"), PYOMO_TAB_LABEL, False, False, pyomo_z
+    return (
+        _result_section(instance, pyomo_result, "Pyomo / Ipopt"),
+        PYOMO_TAB_LABEL,
+        False,
+        False,
+        pyomo_solution,
+    )
 
 
 @dash.callback(
     Output("stride-improvement", "children"),
     inputs=[
-        Input("stride-objective", "data"),
-        Input("pyomo-objective", "data"),
+        Input("stride-solution", "data"),
+        Input("pyomo-solution", "data"),
     ],
     prevent_initial_call=True,
 )
-def show_stride_improvement(stride_z: float | None, pyomo_z: float | None) -> list | None:
+def show_stride_improvement(stride_solution: dict | None, pyomo_solution: dict | None) -> list | None:
     """Show a banner on the Stride tab when Stride beat Pyomo / Ipopt.
 
     Only rendered when both solvers produced a feasible objective and Stride's
     minimum separation is strictly larger than Pyomo's.
 
     Args:
-        stride_z: Stride's objective value, or None if it did not run/was infeasible.
-        pyomo_z: Pyomo's objective value, or None if it did not run/was infeasible.
+        stride_solution: Stride's solution (objective and positions), or None if
+            it did not run/was infeasible.
+        pyomo_solution: Pyomo's solution (objective and positions), or None if
+            it did not run/was infeasible.
 
     Returns:
         The improvement banner components, or None when there is nothing to show.
     """
+    stride_z = (stride_solution or {}).get("objective")
+    pyomo_z = (pyomo_solution or {}).get("objective")
     if not stride_z or not pyomo_z or pyomo_z <= 0 or stride_z <= pyomo_z:
         return None
 
@@ -395,7 +411,6 @@ def show_stride_improvement(stride_z: float | None, pyomo_z: float | None) -> li
     return html.Div(
         className="improvement-stat",
         children=[
-            html.Span("▲ "),
             html.Span(
                 f"Stride improved the minimum separation by {pct:.1f}% over Pyomo / Ipopt "
                 f"({stride_z:.2f}° vs {pyomo_z:.2f}°)."
@@ -404,7 +419,120 @@ def show_stride_improvement(stride_z: float | None, pyomo_z: float | None) -> li
     )
 
 
-def _result_section(instance: dict, result: dict, solver_label: str) -> list:
+def _solution_store_entry(result: dict) -> dict | None:
+    """Build the dcc.Store payload for a solver result (None if unusable)."""
+    if not result.get("feasible") or not result.get("objective") or not result.get("positions"):
+        return None
+    return {"objective": result["objective"], "positions": list(result["positions"])}
+
+
+def _quality_meter(z: float, best_z: float, compared: bool) -> html.Div:
+    """Build a solution-quality bar scaled against the best objective of the run.
+
+    Args:
+        z: This solver's objective (minimum weighted separation).
+        best_z: The best objective across the solvers that produced a solution.
+        compared: Whether more than one solver produced a solution.
+
+    Returns:
+        The meter components (track, fill, and caption).
+    """
+    frac = max(0.0, min(z / best_z, 1.0)) if best_z > 0 else 0.0
+    if not compared:
+        color = "rgba(160,165,210,0.9)"
+        caption = f"Min weighted separation: {z:.2f}°"
+    elif z >= best_z:
+        color = "#4ade80"
+        caption = f"Min weighted separation: {z:.2f}°"
+    else:
+        pct = (best_z - z) / best_z * 100.0
+        color = "#fbbf24"
+        caption = f"Min weighted separation: {z:.2f}° — {pct:.1f}% below the other solver"
+
+    return html.Div(
+        children=[
+            html.Div(
+                className="quality-meter-track",
+                children=html.Div(
+                    className="quality-meter-fill",
+                    style={"width": f"{frac * 100:.1f}%", "background": color},
+                ),
+            ),
+            html.Div(caption, className="quality-meter-caption"),
+        ],
+    )
+
+
+@dash.callback(
+    Output("stride-results", "children", allow_duplicate=True),
+    Output("pyomo-results", "children", allow_duplicate=True),
+    inputs=[
+        Input("stride-solution", "data"),
+        Input("pyomo-solution", "data"),
+        State("num-satellites-select", "value"),
+        State("instance-index-slider", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def update_solution_comparison(
+    stride_solution: dict | None,
+    pyomo_solution: dict | None,
+    num_satellites_val: str,
+    instance_index: int,
+) -> tuple:
+    """Fill in the solution-quality meters once solver results are in.
+
+    Args:
+        stride_solution: Stride solution (objective and positions), or None.
+        pyomo_solution: Pyomo solution (objective and positions), or None.
+        num_satellites_val: The number of satellites for the instance.
+        instance_index: The index of the specific instance within the file (0-based).
+
+    Returns:
+        A tuple containing:
+
+        - list: The Stride results section on the shared scale.
+        - list: The Pyomo results section on the shared scale.
+    """
+    solutions = {"stride": stride_solution, "pyomo": pyomo_solution}
+    available = {k: s for k, s in solutions.items() if s}
+    if not available:
+        raise PreventUpdate
+
+    instance = get_instance(int(num_satellites_val), instance_index)
+    best_z = max(s["objective"] for s in available.values())
+    compared = len(available) > 1
+    labels = {"stride": "D-Wave Stride", "pyomo": "Pyomo / Ipopt"}
+
+    outputs = []
+    for key in ("stride", "pyomo"):
+        solution = solutions[key]
+        if not solution:
+            outputs.append(dash.no_update)
+            continue
+        result = {
+            "objective": solution["objective"],
+            "positions": solution["positions"],
+            "feasible": True,
+        }
+        outputs.append(
+            _result_section(
+                instance,
+                result,
+                labels[key],
+                meter=_quality_meter(solution["objective"], best_z, compared),
+            )
+        )
+
+    return tuple(outputs)
+
+
+def _result_section(
+    instance: dict,
+    result: dict,
+    solver_label: str,
+    meter: html.Div = None,
+) -> list:
     """Build Dash components for a single solver result."""
     n = instance["num_satellites"]
     west = instance["boundaries"]["west_boundaries"]
@@ -438,4 +566,4 @@ def _result_section(instance: dict, result: dict, solver_label: str) -> list:
         table_data["Allowed range"].append(f"{west[i]:.1f}° – {east[i]:.1f}°")
         table_data["Optimized position"].append(f"{positions[i]:.1f}°")
 
-    return generate_results_layout(fig, z, feasible, table_data)
+    return generate_results_layout(fig, z, feasible, table_data, meter)

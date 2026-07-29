@@ -29,6 +29,12 @@ def _deg_to_xy(deg: float, r: float = 1.0) -> tuple:
     return r * math.sin(rad), r * math.cos(rad)
 
 
+def _circular_separation(a: float, b: float) -> float:
+    """Angular separation between two orbital positions, in [0, 180]."""
+    delta = abs(a - b) % 360.0
+    return min(delta, 360.0 - delta)
+
+
 def create_orbit_figure(
     instance: dict,
     positions: list = None,
@@ -79,22 +85,53 @@ def create_orbit_figure(
     # midpoints for the input/instance view where no solution exists yet.
     chord_pts = positions if positions else midpoints
     max_d = float(interferences.max()) if interferences.max() > 0 else 1.0
+
+    # On solution plots, chord opacity encodes residual interference pressure
+    # (weight / achieved separation), normalized against the worst pair of the
+    # naive midpoint placement. The reference depends only on the instance, so
+    # the Stride and Pyomo plots share one absolute scale: the plot with the
+    # more opaque chords is the worse solution.
+    ref_pressure = 1.0
+    if positions:
+        ref_pressure = max(
+            (
+                float(interferences[i][j])
+                / max(_circular_separation(midpoints[i], midpoints[j]), 1e-6)
+                for i in range(num_satellites)
+                for j in range(i + 1, num_satellites)
+                if float(interferences[i][j]) >= 0.1
+            ),
+            default=1.0,
+        )
+
     for i in range(num_satellites):
         for j in range(i + 1, num_satellites):
             d = float(interferences[i][j])
             if d < 0.1:
                 continue
-            opacity = 0.07 + 0.40 * (d / max_d)
             width = 0.6 + 1.8 * (d / max_d)
+            if positions:
+                sep = _circular_separation(positions[i], positions[j])
+                pressure = d / max(sep, 1e-6)
+                opacity = min(0.05 + 0.95 * (pressure / ref_pressure), 1.0)
+                color = f"rgba(255,195,60,{opacity:.2f})"
+                hovertext = (
+                    f"Interference {i}↔{j}: weight {d:.3f}, "
+                    f"separation {sep:.1f}°"
+                )
+            else:
+                opacity = 0.07 + 0.40 * (d / max_d)
+                color = f"rgba(255,195,60,{opacity:.2f})"
+                hovertext = f"Interference {i}↔{j}: {d:.3f}"
             xi, yi = _deg_to_xy(chord_pts[i])
             xj, yj = _deg_to_xy(chord_pts[j])
             fig.add_trace(go.Scatter(
                 x=[xi, xj], y=[yi, yj],
                 mode="lines",
-                line=dict(color=f"rgba(255,195,60,{opacity:.2f})", width=width),
+                line=dict(color=color, width=width),
                 showlegend=False,
                 hoverinfo="text",
-                hovertext=f"Interference {i}↔{j}: {d:.3f}",
+                hovertext=hovertext,
             ))
 
     # ── Satellite arcs (allowed ranges) ─────────────────────────────────────────

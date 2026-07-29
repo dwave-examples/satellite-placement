@@ -340,7 +340,13 @@ def metric_card(label: str, value_str: str, color: str = "inherit") -> html.Div:
     )
 
 
-def generate_results_layout(fig: go.Figure, objective: float, feasible: bool, table_data: dict[str, list]) -> html.Div:
+def generate_results_layout(
+    fig: go.Figure,
+    objective: float,
+    feasible: bool,
+    table_data: dict[str, list],
+    meter: html.Div = None,
+) -> html.Div:
     """Generate a Div containing the results of the optimization.
 
     Args:
@@ -348,6 +354,8 @@ def generate_results_layout(fig: go.Figure, objective: float, feasible: bool, ta
         objective: The objective value of the optimization.
         feasible: Whether the solution is feasible.
         table_data: A dictionary containing per-satellite results.
+        meter: Optional solution-quality meter comparing this solver's
+            objective against the other solver's.
 
     Returns:
         A Div containing the results of the optimization.
@@ -370,6 +378,7 @@ def generate_results_layout(fig: go.Figure, objective: float, feasible: bool, ta
             ),
             html.Div(
                 [
+                    html.Div(meter, className="quality-meter"),
                     html.Div(
                         className="metrics-row",
                         children=[
@@ -402,8 +411,8 @@ def create_interface() -> html.Div:
             # Below are any temporary storage items, e.g., for sharing data between callbacks.
             dcc.Store(id="running-stride"),
             dcc.Store(id="running-pyomo"),
-            dcc.Store(id="stride-objective"),
-            dcc.Store(id="pyomo-objective"),
+            dcc.Store(id="stride-solution"),
+            dcc.Store(id="pyomo-solution"),
             # Settings and results columns
             html.Main(
                 className="columns-main",
