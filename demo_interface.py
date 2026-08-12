@@ -330,32 +330,65 @@ def generate_instance_stats(instance_stats: dict) -> list[html.P]:
     return [html.P([html.B(key), value]) for key, value in instance_stats.items()]
 
 
-def metric_card(label: str, value_str: str, color: str = "inherit") -> html.Div:
+def generate_meter(fraction: float) -> html.Div:
+    """Generate a meter element for displaying a percentage.
+
+    Args:
+        fraction: The fraction of the meter to fill (between 0 and 1).
+
+    Returns:
+        A Div containing the meter.
+    """
     return html.Div(
-        className="metric-card",
+        className="quality-meter-track",
+        children=html.Div(
+            className="quality-meter-fill",
+            style={"width": f"{fraction * 100:.1f}%"},
+        ),
+    )
+
+
+def metric_card(
+    label: str,
+    value_str: str,
+    class_name: str = "",
+    additional_html: list = None,
+) -> html.Div:
+    """Generate a metric card for displaying a single metric.
+    
+    Args:
+        label: The label for the metric.
+        value_str: The value of the metric as a string.
+        class_name: Additional class names to add to the card.
+        additional_html: An optional list of additional HTML elements to add to the card.
+
+    Returns:
+        A Div containing the metric card.
+    """
+
+    return html.Div(
+        className=f"metric-card {class_name}",
         children=[
             html.Div(label, className="metric-label"),
-            html.Div(value_str, className="metric-value", style={"color": color}),
-        ],
+            html.Div(value_str, className="metric-value"),
+        ] + (additional_html if additional_html is not None else []),
     )
 
 
 def generate_results_layout(
     fig: go.Figure,
     objective: float,
-    feasible: bool,
     table_data: dict[str, list],
-    meter: html.Div = None,
+    comparison_card: html.Div = None,
 ) -> html.Div:
     """Generate a Div containing the results of the optimization.
 
     Args:
         fig: A Plotly Figure representing the optimization results.
         objective: The objective value of the optimization.
-        feasible: Whether the solution is feasible.
         table_data: A dictionary containing per-satellite results.
-        meter: Optional solution-quality meter comparing this solver's
-            objective against the other solver's.
+        comparison_card: Optional metric card comparing this solver's objective against the other
+            solver's.
 
     Returns:
         A Div containing the results of the optimization.
@@ -378,15 +411,12 @@ def generate_results_layout(
             ),
             html.Div(
                 [
-                    html.Div(meter, className="quality-meter"),
                     html.Div(
                         className="metrics-row",
                         children=[
-                            metric_card("Objective (z)", f"{objective:.3f}°",
-                                            color="#4ade80" if objective > 0 else "#f87171"),
-                            metric_card("Feasible", "Yes" if feasible else "No",
-                                            color="#4ade80" if feasible else "#f87171"),
-                        ],
+                            metric_card("Objective (z)", f"{objective:.3f}°"),
+                        ]
+                        + ([comparison_card] if comparison_card is not None else []),
                     ),
                     generate_table(table_data),
                 ],
@@ -555,10 +585,7 @@ def create_interface() -> html.Div:
                                         children=[
                                             html.Div(
                                                 className="tab-content-wrapper",
-                                                children=[
-                                                    html.Div(id="stride-improvement"),
-                                                    html.Div(id="stride-results"),
-                                                ],
+                                                children=html.Div(id="stride-results"),
                                             )
                                         ],
                                     ),

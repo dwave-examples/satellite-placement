@@ -25,7 +25,7 @@ satellite within its allowed arc.
 """
 
 STRIDE_TAB_LABEL = "Stride"
-PYOMO_TAB_LABEL = "Pyomo / Ipopt"
+PYOMO_TAB_LABEL = "Pyomo + Ipopt"
 
 #######################################
 # Sliders, buttons and option entries #

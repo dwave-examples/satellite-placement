@@ -1,5 +1,5 @@
 /*
-Copyright 2024 D-Wave
+Copyright 2026 D-Wave
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -80,34 +80,6 @@ custom CSS can be added below.
     color: white;
 }
 
-.metrics-row {
-    display: flex;
-    gap: 1.25rem;
-    flex-wrap: wrap;
-    margin: 0.75rem 0 1.25rem;
-}
-
-.metric-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 6px;
-    padding: 0.6rem 1.1rem;
-    min-width: 130px;
-}
-
-.metric-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: white;
-    margin-bottom: 0.2rem;
-}
-
-.metric-value {
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
 .solver-error {
     padding: 0.75rem 1rem;
     background: rgba(248,113,113,0.12);
@@ -117,14 +89,52 @@ custom CSS can be added below.
     font-size: 0.9rem;
 }
 
-.improvement-stat {
-    padding: 12px 16px;
-    background: rgba(74, 222, 128, 0.12);
-    font-weight: 600;
+.metrics-row {
+    display: flex;
+    gap: 1.25rem;
+    margin: 0.75rem 0 1.25rem;
 }
 
-.quality-meter {
-    margin: 0.25rem 0 1rem;
+.metric-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 0.6rem 1.1rem;
+    min-width: 135px;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.2rem;
+}
+
+.metric-value {
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: rgb(81, 190, 158);
+}
+
+.metric-card--worse .metric-value {
+    color: rgb(255, 194, 56);
+}
+
+.metric-card--better {
+    background: rgba(81, 190, 158, 0.1);
+    border-color: rgba(81, 190, 158, 0.35);
+}
+
+.metric-card--worse {
+    background: rgba(255, 194, 56, 0.1);
+    border-color: rgba(255, 194, 56, 0.35);
+    min-width: 190px;
+}
+
+.metric-card--worse .quality-meter-track {
+    margin-top: 0.45rem;
 }
 
 .quality-meter-track {
@@ -139,6 +149,7 @@ custom CSS can be added below.
     height: 100%;
     border-radius: 5px;
     transition: width 0.4s ease;
+    background: rgb(255, 194, 56);
 }
 
 .quality-meter-caption {

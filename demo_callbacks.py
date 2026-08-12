@@ -24,9 +24,7 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 
-
-
-from demo_interface import generate_instance_stats, generate_results_layout
+from demo_interface import generate_instance_stats, generate_meter, generate_results_layout, metric_card
 from src.demo_enums import SolverType
 from src.utils import get_instance
 from src.plot import create_orbit_figure
@@ -127,8 +125,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
         "Satellites: ": str(n),
         "Possible orderings (n!/2): ": _format_orderings(n),
         "Significant interference pairs: ": str(n_pairs),
-        "Avg arc width: ": f"{avg_arc:.1f}°",
-        "Avg arc coverage: ": f"{coverage:.1f}% of orbit",
+        "Avg arc width: ": f"{avg_arc:.1f}° ({coverage:.1f}% of orbit)",
     }
 
     return fig, generate_instance_stats(stats), True, True, "input-tab"
@@ -378,47 +375,6 @@ def run_optimization_pyomo(
     )
 
 
-@dash.callback(
-    Output("stride-improvement", "children"),
-    inputs=[
-        Input("stride-solution", "data"),
-        Input("pyomo-solution", "data"),
-    ],
-    prevent_initial_call=True,
-)
-def show_stride_improvement(stride_solution: dict | None, pyomo_solution: dict | None) -> list | None:
-    """Show a banner on the Stride tab when Stride beat Pyomo / Ipopt.
-
-    Only rendered when both solvers produced a feasible objective and Stride's
-    minimum separation is strictly larger than Pyomo's.
-
-    Args:
-        stride_solution: Stride's solution (objective and positions), or None if
-            it did not run/was infeasible.
-        pyomo_solution: Pyomo's solution (objective and positions), or None if
-            it did not run/was infeasible.
-
-    Returns:
-        The improvement banner components, or None when there is nothing to show.
-    """
-    stride_z = (stride_solution or {}).get("objective")
-    pyomo_z = (pyomo_solution or {}).get("objective")
-    if not stride_z or not pyomo_z or pyomo_z <= 0 or stride_z <= pyomo_z:
-        return None
-
-    pct = (stride_z - pyomo_z) / pyomo_z * 100.0
-
-    return html.Div(
-        className="improvement-stat",
-        children=[
-            html.Span(
-                f"Stride improved the minimum separation by {pct:.1f}% over Pyomo / Ipopt "
-                f"({stride_z:.2f}° vs {pyomo_z:.2f}°)."
-            ),
-        ],
-    )
-
-
 def _solution_store_entry(result: dict) -> dict | None:
     """Build the dcc.Store payload for a solver result (None if unusable)."""
     if not result.get("feasible") or not result.get("objective") or not result.get("positions"):
@@ -426,40 +382,34 @@ def _solution_store_entry(result: dict) -> dict | None:
     return {"objective": result["objective"], "positions": list(result["positions"])}
 
 
-def _quality_meter(z: float, best_z: float, compared: bool) -> html.Div:
-    """Build a solution-quality bar scaled against the best objective of the run.
+def _comparison_card(z: float, other_z: float, other_label: str) -> html.Div:
+    """Build a metric card comparing a solver's objective against another.
 
     Args:
         z: This solver's objective (minimum weighted separation).
-        best_z: The best objective across the solvers that produced a solution.
-        compared: Whether more than one solver produced a solution.
+        other_z: The other solver's objective.
+        other_label: Display name of the other solver.
 
     Returns:
-        The meter components (track, fill, and caption).
+        A card with the improvement percent when this solver is better, or the shortfall percent
+        and a quality bar when worse.
     """
-    frac = max(0.0, min(z / best_z, 1.0)) if best_z > 0 else 0.0
-    if not compared:
-        color = "rgba(160,165,210,0.9)"
-        caption = f"Min weighted separation: {z:.2f}°"
-    elif z >= best_z:
-        color = "#4ade80"
-        caption = f"Min weighted separation: {z:.2f}°"
-    else:
-        pct = (best_z - z) / best_z * 100.0
-        color = "#fbbf24"
-        caption = f"Min weighted separation: {z:.2f}° — {pct:.1f}% below the other solver"
+    if z > other_z:
+        pct = (z - other_z) / other_z * 100.0
+        return metric_card(
+            f"Outperforms {other_label} by",
+            f"{pct:.1f}%",
+            class_name="metric-card--better",
+        )
 
-    return html.Div(
-        children=[
-            html.Div(
-                className="quality-meter-track",
-                children=html.Div(
-                    className="quality-meter-fill",
-                    style={"width": f"{frac * 100:.1f}%", "background": color},
-                ),
-            ),
-            html.Div(caption, className="quality-meter-caption"),
-        ],
+    pct = (other_z - z) / other_z * 100.0
+    fraction = max(0.0, min(z / other_z, 1.0))
+
+    return metric_card(
+        f"Underperforms {other_label} by",
+        f"{pct:.1f}%",
+        class_name="metric-card--worse",
+        additional_html=[generate_meter(fraction)],
     )
 
 
@@ -479,8 +429,8 @@ def update_solution_comparison(
     pyomo_solution: dict | None,
     num_satellites_val: str,
     instance_index: int,
-) -> tuple:
-    """Fill in the solution-quality meters once solver results are in.
+) -> tuple[list, list]:
+    """Fill in the solution-comparison cards once solver results are in.
 
     Args:
         stride_solution: Stride solution (objective and positions), or None.
@@ -491,8 +441,8 @@ def update_solution_comparison(
     Returns:
         A tuple containing:
 
-        - list: The Stride results section on the shared scale.
-        - list: The Pyomo results section on the shared scale.
+        - list: The Stride results section with its comparison card.
+        - list: The Pyomo results section with its comparison card.
     """
     solutions = {"stride": stride_solution, "pyomo": pyomo_solution}
     available = {k: s for k, s in solutions.items() if s}
@@ -500,9 +450,12 @@ def update_solution_comparison(
         raise PreventUpdate
 
     instance = get_instance(int(num_satellites_val), instance_index)
-    best_z = max(s["objective"] for s in available.values())
-    compared = len(available) > 1
-    labels = {"stride": "D-Wave Stride", "pyomo": "Pyomo / Ipopt"}
+    labels = {"stride": "Stride", "pyomo": "Pyomo+Ipopt"}
+
+    stride_z = (stride_solution or {}).get("objective")
+    pyomo_z = (pyomo_solution or {}).get("objective")
+    comparable = bool(stride_z) and bool(pyomo_z) and stride_z > 0 and pyomo_z > 0
+    tied = comparable and math.isclose(stride_z, pyomo_z, rel_tol=1e-6, abs_tol=1e-9)
 
     outputs = []
     for key in ("stride", "pyomo"):
@@ -515,14 +468,15 @@ def update_solution_comparison(
             "positions": solution["positions"],
             "feasible": True,
         }
-        outputs.append(
-            _result_section(
-                instance,
-                result,
-                labels[key],
-                meter=_quality_meter(solution["objective"], best_z, compared),
+        card = None
+        if comparable and not tied:
+            other_key = "pyomo" if key == "stride" else "stride"
+            card = _comparison_card(
+                solutions[key]["objective"],
+                solutions[other_key]["objective"],
+                labels[other_key],
             )
-        )
+        outputs.append(_result_section(instance, result, labels[key], comparison_card=card))
 
     return tuple(outputs)
 
@@ -531,7 +485,7 @@ def _result_section(
     instance: dict,
     result: dict,
     solver_label: str,
-    meter: html.Div = None,
+    comparison_card: html.Div = None,
 ) -> list:
     """Build Dash components for a single solver result."""
     n = instance["num_satellites"]
@@ -548,7 +502,6 @@ def _result_section(
         ]
 
     z = result.get("objective") or 0.0
-    feasible = result.get("feasible", False)
 
     fig = create_orbit_figure(
         instance,
@@ -566,4 +519,4 @@ def _result_section(
         table_data["Allowed range"].append(f"{west[i]:.1f}° – {east[i]:.1f}°")
         table_data["Optimized position"].append(f"{positions[i]:.1f}°")
 
-    return generate_results_layout(fig, z, feasible, table_data, meter)
+    return generate_results_layout(fig, z, table_data, comparison_card)
