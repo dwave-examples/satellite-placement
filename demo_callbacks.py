@@ -397,7 +397,7 @@ def _comparison_card(z: float, other_z: float, other_label: str) -> html.Div:
     if z > other_z:
         pct = (z - other_z) / other_z * 100.0
         return metric_card(
-            f"Outperforms {other_label} by",
+            f"Outperforms {other_label}",
             f"{pct:.1f}%",
             class_name="metric-card--better",
         )

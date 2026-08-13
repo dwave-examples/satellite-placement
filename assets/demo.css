@@ -60,7 +60,7 @@ custom CSS can be added below.
 
 .graph-layout table {
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     max-height: 50vh;
     overflow-y: auto;
     display: inline-block;
@@ -68,10 +68,10 @@ custom CSS can be added below.
 
 .graph-layout thead {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
     background: #141422;
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     position: sticky;
     top: 0;
 }
@@ -82,9 +82,9 @@ custom CSS can be added below.
 
 .solver-error {
     padding: 0.75rem 1rem;
-    background: rgba(248,113,113,0.12);
-    border: 1px solid rgba(248,113,113,0.35);
-    border-radius: 6px;
+    background: rgba(170,58,60,0.12);
+    border: 1px solid rgba(170,58,60,0.35);
+    border-radius: var(--border-radius);
     margin: 0.5rem 0;
     font-size: 0.9rem;
 }
@@ -98,22 +98,21 @@ custom CSS can be added below.
 .metric-card {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     padding: 0.6rem 1.1rem;
     min-width: 135px;
 }
 
 .metric-label {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
     font-weight: 600;
-    color: white;
+    color: var(--grey-light);
     margin-bottom: 0.2rem;
 }
 
 .metric-value {
-    font-size: 1.45rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: rgb(81, 190, 158);
 }
