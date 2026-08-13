@@ -151,8 +151,51 @@ custom CSS can be added below.
     background: rgb(255, 194, 56);
 }
 
-.quality-meter-caption {
-    margin-top: 0.35rem;
-    font-size: 0.8rem;
-    color: white;
+
+/* Overrides left column styling */
+.settings-and-buttons {
+    color: #f5f7fb;
+    background-color: rgba(32, 34, 57, 0.5);
+    transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: calc(2.5 * 8px);
+    padding: 5px 26px 26px;
+}
+
+.title-section {
+    background: none;
+}
+
+.left-column {
+    background-image: url("/assets/background2.svg");
+}
+
+label,
+.mantine-InputWrapper-label.mantine-CheckboxGroup-label {
+    color: var(--grey-lighter);
+}
+
+.mantine-Slider-markLabel {
+    color: var(--grey-lighter);
+}
+
+.slider.mantine-Slider-root {
+    --slider-color: var(--teal) !important;
+}
+
+.checklist.mantine-InputWrapper-root.mantine-CheckboxGroup-root .mantine-Checkbox-input{
+    --checkbox-color: var(--teal) !important;
+}
+
+.left-column-collapse {
+    background: none;
+}
+
+.left-column-collapse:hover,
+.left-column-collapse:focus {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.collapse-arrow:before, .collapse-arrow:after {
+    background: var(--grey-lighter);
 }
