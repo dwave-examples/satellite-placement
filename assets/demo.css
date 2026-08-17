@@ -58,6 +58,11 @@ custom CSS can be added below.
     color: white;
 }
 
+table:focus-visible {
+    box-shadow: 0 0 0 2px var(--teal);
+    outline-color: var(--teal);
+}
+
 .graph-layout table {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--border-radius);
@@ -151,6 +156,13 @@ custom CSS can be added below.
     background: rgb(255, 194, 56);
 }
 
+@media screen and (max-width: 800px) {
+    .banner img,
+    .graph-details {
+        display: none;
+    }
+}
+
 
 /* Overrides left column styling */
 .settings-and-buttons {
@@ -180,11 +192,11 @@ label,
 }
 
 .slider.mantine-Slider-root {
-    --slider-color: var(--teal) !important;
+    --slider-color: var(--teal-darker) !important;
 }
 
 .checklist.mantine-InputWrapper-root.mantine-CheckboxGroup-root .mantine-Checkbox-input{
-    --checkbox-color: var(--teal) !important;
+    --checkbox-color: var(--teal-darker) !important;
 }
 
 .left-column-collapse {

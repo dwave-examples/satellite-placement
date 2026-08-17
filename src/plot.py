@@ -75,7 +75,7 @@ def create_orbit_figure(
             x=[xm], y=[ym],
             mode="text",
             text=[f"{deg}°"],
-            textfont=dict(size=9, color="rgba(160,165,210,0.8)"),
+            textfont=dict(size=10.5, color="rgba(160,165,210,0.9)"),
             showlegend=False,
             hoverinfo="skip",
         ))
@@ -204,7 +204,7 @@ def create_orbit_figure(
             orientation="h",
             yanchor="top", y=-0.01,
             xanchor="center", x=0.5,
-            font=dict(size=9.5, color="rgba(200,205,230,0.85)"),
+            font=dict(size=11, color="rgb(200,205,230)"),
             bgcolor="rgba(0,0,0,0)",
             itemsizing="constant",
         ),
