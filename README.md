@@ -72,7 +72,7 @@ experienced by any pair.
 
 ## Problem Instances
 
-The three instance files in `input/` cover 5, 10, and 20 satellites, with 11
+The four instance files in `input/` cover 5, 10, 20, and 30 satellites, with 11
 instances each. Instances are generated as follows:
 
 - Global west and east boundaries are 0° and 180°.
@@ -187,6 +187,7 @@ input/
   satellite_instances_180_5.json   — 11 instances, 5 satellites each
   satellite_instances_180_10.json  — 11 instances, 10 satellites each
   satellite_instances_180_20.json  — 11 instances, 20 satellites each
+  satellite_instances_180_30.json  — 11 instances, 30 satellites each
 ```
 
 Instance JSON files each contain a list of problem dicts with keys

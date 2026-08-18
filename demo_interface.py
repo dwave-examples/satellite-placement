@@ -63,35 +63,6 @@ def slider(label: str, id: str, config: dict) -> html.Div:
     )
 
 
-def range_slider(label: str, id: str, config: dict) -> html.Div:
-    """Range slider element for value selection.
-
-    Args:
-        label: The title that goes above the range slider.
-        id: A unique selector for this element.
-        config: A dictionary of range slider configurations, see dmc.RangeSlider Dash Mantine docs.
-    """
-    return html.Div(
-        className="rangeslider-wrapper",
-        children=[
-            html.Label(label, htmlFor=id),
-            dmc.RangeSlider(
-                id=id,
-                className="slider",
-                **config,
-                marks=[
-                    {"value": config["min"], "label": f'{config["min"]}'},
-                    {"value": config["max"], "label": f'{config["max"]}'},
-                ],
-                labelAlwaysOn=True,
-                thumbFromLabel=f"{label} slider start",
-                thumbToLabel=f"{label} slider end",
-                color=THEME_COLOR,
-            )
-        ]
-    )
-
-
 def dropdown(label: str, id: str, options: list) -> html.Div:
     """Dropdown element for option selection.
 
@@ -137,56 +108,6 @@ def checklist(label: str, id: str, options: list, values: list, inline: bool = T
                         dmc.Checkbox(label=option["label"], value=option["value"], color=THEME_COLOR)
                         for option in options
                     ],
-                ),
-            ),
-        ],
-    )
-
-
-def checkbox(label: str, id: str, checked: bool) -> html.Div:
-    """Checkbox element.
-
-    Args:
-        label: The title that goes above the checkbox.
-        id: A unique selector for this element.
-        checked: Whether the checkbox is checked or not.
-    """
-    return html.Div(
-        className="checkbox-wrapper",
-        children=[
-            dmc.Checkbox(
-                id=id,
-                label=label,
-                checked=checked,
-                color=THEME_COLOR,
-            )
-        ],
-    )
-
-
-def radio(label: str, id: str, options: list, value: str, inline: bool = True) -> html.Div:
-    """Radio element for option selection.
-
-    Args:
-        label: The title that goes above the radio.
-        id: A unique selector for this element.
-        options: A list of dictionaries of labels and values.
-        value: The value of the radio that should be preselected.
-        inline: Whether the options are displayed beside or below each other.
-    """
-    return html.Div(
-        className="radio-wrapper",
-        children=[
-            dmc.RadioGroup(
-                id=id,
-                className=f"radio{' radio--inline' if inline else ''}",
-                label=label,
-                value=value,
-                children=dmc.Group(
-                    [
-                        dmc.Radio(option["label"], value=option["value"], color=THEME_COLOR)
-                        for option in options
-                    ]
                 ),
             ),
         ],

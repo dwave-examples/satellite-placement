@@ -13,14 +13,11 @@
 # limitations under the License.
 
 import math
-import os
 
 import numpy as np
 import plotly.graph_objects as go
 
 from src.utils import compute_midpoints, sat_color
-
-INPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "input")
 
 
 def _deg_to_xy(deg: float, r: float = 1.0) -> tuple[float, float]:

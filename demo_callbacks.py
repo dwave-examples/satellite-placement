@@ -159,7 +159,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
 )
 def update_tab_loading_state(
     run_click: int, cancel_click: int, solvers: list[str]
-) -> tuple[str, bool, bool, str, bool, bool, dict, dict, str]:
+) -> tuple[str, bool, bool, str, bool, bool, dict, dict, str, dict, dict]:
     """Updates the tab loading state after the run button
     or cancel button has been clicked.
 
@@ -266,7 +266,6 @@ def enable_tabs_when_done(
 @dash.callback(
     Output("run-button", "style", allow_duplicate=True),
     Output("cancel-button", "style", allow_duplicate=True),
-    background=True,
     inputs=[
         Input("running-stride", "data"),
         Input("running-pyomo", "data"),
@@ -309,7 +308,7 @@ def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple
 )
 def run_optimization_stride(
     run_click: int,
-    solvers: str,
+    solvers: list[str],
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
@@ -375,7 +374,7 @@ def run_optimization_stride(
 )
 def run_optimization_pyomo(
     run_click: int,
-    solvers: str,
+    solvers: list[str],
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,

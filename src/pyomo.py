@@ -13,8 +13,6 @@
 # limitations under the License.
 
 
-import itertools
-
 import numpy as np
 
 from pyomo.environ import (
@@ -38,8 +36,6 @@ def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarra
     """
     west_boundaries = boundaries['west_boundaries']
     east_boundaries = boundaries['east_boundaries']
-
-    combinations = list(itertools.combinations(range(num_satellites), 2))
 
     model = ConcreteModel()
 

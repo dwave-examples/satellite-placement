@@ -88,7 +88,6 @@ def create_model(interferences: np.ndarray, boundaries: dict) -> Model:
     model.c = c = model.constant([0] * num_satellites + [-1])
 
     # Ok, we now can put the LP together
-    # with unittest.mock.patch("dwave.optimization.mathematical.LinearProgram", SolverSideLP):
     model.lp = lp = linprog(c=c, A_ub=A, b_ub=b_ub, lb=lb, ub=ub)
 
     # And connect it back to the model
@@ -132,7 +131,6 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
     solver.sample(model, time_limit=int(time_limit), label="Example - Satellite Placement")
     elapsed = time_module.time() - start
 
-    z_value = float(model.objective.state())
     feasible = all(bool(sym.state()) for sym in model.iter_constraints())
 
     x_perm = list(model.x.state(0))
