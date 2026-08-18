@@ -173,6 +173,8 @@ def update_tab_loading_state(
         - dict: Run button style.
         - dict: Cancel button style.
         - str: The value of the tab that should be active.
+        - dict: The Stride solution store data.
+        - dict: The Pyomo solution store data.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
@@ -202,6 +204,56 @@ def update_tab_loading_state(
             dash.no_update,
         )
     raise PreventUpdate
+
+
+@dash.callback(
+    Output("stride-tab", "disabled", allow_duplicate=True),
+    Output("stride-tab", "children", allow_duplicate=True),
+    Output("pyomo-tab", "disabled", allow_duplicate=True),
+    Output("pyomo-tab", "children", allow_duplicate=True),
+    inputs=[
+        Input("running-stride", "data"),
+        Input("running-pyomo", "data"),
+        State("solver-type-select", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def enable_tabs_when_done(
+    running_stride: bool, running_pyomo: bool, solvers: list[str]
+    ) -> tuple[bool, str, bool, str]:
+    """Enable the results tabs only once every selected solver has finished.
+
+    Keeps both tabs in their disabled 'Loading' state until all selected solvers
+    have returned, so results appear together when comparing solvers.
+
+    Args:
+        running_stride (bool): Whether the Stride solver is running.
+        running_pyomo (bool): Whether the Pyomo solver is running.
+        solvers (list[str]): The list of selected solvers.
+
+    Returns:
+        A tuple containing:
+
+        - bool: Whether the Stride tab should be disabled.
+        - str: The label for the Stride tab.
+        - bool: Whether the Pyomo tab should be disabled.
+        - str: The label for the Pyomo tab.
+    """
+    if running_stride or running_pyomo:
+        raise PreventUpdate
+
+    # Both flags changing in a single update can only come from the cancel handler
+    # (solver completions arrive one at a time); a cancelled run has no results to
+    # show, so keep the tabs disabled.
+    if len(ctx.triggered) > 1:
+        raise PreventUpdate
+
+    return (
+        False if f"{SolverType.STRIDE.value}" in solvers else dash.no_update,
+        STRIDE_TAB_LABEL,
+        False if f"{SolverType.PYOMO.value}" in solvers else dash.no_update,
+        PYOMO_TAB_LABEL,
+    )
 
 
 @dash.callback(
@@ -235,8 +287,6 @@ def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple
 
 @dash.callback(
     Output("stride-results", "children", allow_duplicate=True),
-    Output("stride-tab", "children", allow_duplicate=True),
-    Output("stride-tab", "disabled", allow_duplicate=True),
     Output("running-stride", "data", allow_duplicate=True),
     Output("stride-solution", "data", allow_duplicate=True),
     inputs=[
@@ -256,7 +306,7 @@ def run_optimization_stride(
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-    ) -> tuple[str, str, bool, bool]:
+    ) -> tuple[str, bool, dict]:
     """Runs the optimization and updates UI accordingly.
 
     This is the main function which is called when the ``Run Optimization`` button is clicked.
@@ -275,12 +325,11 @@ def run_optimization_stride(
         A tuple containing:
 
         - str: The results to display in the Stride results tab.
-        - str: The label for the Stride tab.
-        - bool: Whether the Stride tab should be disabled.
         - bool: Whether this is a Stride run.
+        - dict: The Stride solution store data.
     """
     if f"{SolverType.STRIDE.value}" not in solvers:
-        return dash.no_update, STRIDE_TAB_LABEL, True, False, None
+        return dash.no_update, False, None
 
     n = int(num_satellites_val)
     instance = get_instance(n, instance_index)
@@ -297,8 +346,6 @@ def run_optimization_stride(
 
     return (
         _result_section(instance, stride_result, "D-Wave Stride"),
-        STRIDE_TAB_LABEL,
-        False,
         False,
         stride_solution,
     )
@@ -306,8 +353,6 @@ def run_optimization_stride(
 
 @dash.callback(
     Output("pyomo-results", "children", allow_duplicate=True),
-    Output("pyomo-tab", "children", allow_duplicate=True),
-    Output("pyomo-tab", "disabled", allow_duplicate=True),
     Output("running-pyomo", "data", allow_duplicate=True),
     Output("pyomo-solution", "data", allow_duplicate=True),
     inputs=[
@@ -327,7 +372,7 @@ def run_optimization_pyomo(
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-) -> tuple[str, str, bool, bool]:
+) -> tuple[str, bool, dict]:
     """Runs the optimization and updates UI accordingly.
 
     This is the main function which is called when the ``Run Optimization`` button is clicked.
@@ -346,12 +391,11 @@ def run_optimization_pyomo(
         A tuple containing:
 
         - str: The results to display in the Pyomo results tab.
-        - str: The label for the Pyomo tab.
-        - bool: Whether the Pyomo tab should be disabled.
         - bool: Whether this is a Pyomo run.
+        - dict: The Pyomo solution store data.
     """
     if f"{SolverType.PYOMO.value}" not in solvers:
-        return dash.no_update, PYOMO_TAB_LABEL, True, False, None
+        return dash.no_update, False, None
 
     n = int(num_satellites_val)
     instance = get_instance(n, instance_index)
@@ -368,8 +412,6 @@ def run_optimization_pyomo(
 
     return (
         _result_section(instance, pyomo_result, "Pyomo / Ipopt"),
-        PYOMO_TAB_LABEL,
-        False,
         False,
         pyomo_solution,
     )
