@@ -38,6 +38,13 @@ def _format_orderings(n: int) -> str:
 
     The Stride formulation searches over permutations of the satellites, so this
     conveys the combinatorial size of the problem's search space.
+
+    Args:
+        n: The number of satellites.
+
+    Returns:
+        A string representation of the number of distinct orderings, either in
+        full or scientific notation.
     """
     orderings = math.factorial(n) // 2
     if orderings < 1_000_000:
@@ -529,7 +536,17 @@ def _result_section(
     solver_label: str,
     comparison_card: html.Div = None,
 ) -> list:
-    """Build Dash components for a single solver result."""
+    """Build Dash components for a single solver result.
+
+    Args:
+        instance: The satellite instance data.
+        result: The solver result data.
+        solver_label: The label for the solver.
+        comparison_card: An optional comparison card to display alongside the results.
+
+    Returns:
+        A list of Dash components representing the solver result.
+    """
     n = instance["num_satellites"]
     west = instance["boundaries"]["west_boundaries"]
     east = instance["boundaries"]["east_boundaries"]

@@ -23,7 +23,19 @@ from pyomo.environ import (
 )
 
 
-def create_model(num_satellites, boundaries, interferences):
+def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarray) -> ConcreteModel:
+    """Create a Pyomo model for the satellite placement problem.
+
+    Args:
+        num_satellites: Number of satellites in the instance.
+        boundaries: Dict with keys 'west_boundaries' and 'east_boundaries', each a
+            list of length num_satellites with the angular boundaries for each satellite.
+        interferences: 2D numpy array of shape (num_satellites, num_satellites) with interference
+            values between satellites.
+
+    Returns:
+        A Pyomo ConcreteModel representing the satellite placement problem.
+    """
     west_boundaries = boundaries['west_boundaries']
     east_boundaries = boundaries['east_boundaries']
 
@@ -53,16 +65,23 @@ def create_model(num_satellites, boundaries, interferences):
     for i in model.A:
         model.thetas[i].value = midpoints[i-1]
 
-    def constraint_rule1(model, i, j):
+    def constraint_rule1(model: ConcreteModel, i: int, j: int):
+        """Constraint to ensure that the angular separation between satellites i and j is at least
+            the interference value between them, scaled by z.
+        """
         if i<j:
             return -interferences[i-1,j-1]*model.z + abs(model.thetas[j] - model.thetas[i]) >= 0
         else:
             return Constraint.Skip
 
-    def constraint_rule2(model, i,j):
+    def constraint_rule2(model: ConcreteModel, i: int, j: int):
+        """Constraint to ensure that the angular separation between satellites i and j is at most
+            360 degrees minus the interference value between them, scaled by z.
+        """
         if i<j:
             return abs(model.thetas[j] - model.thetas[i]) + interferences[i-1,j-1]*model.z <= 360
-        else: return Constraint.Feasible
+        else:
+            return Constraint.Feasible
 
     model.constr1 = Constraint(model.A, model.B, rule = constraint_rule1)
     model.constr2 = Constraint(model.A, model.B, rule = constraint_rule2)

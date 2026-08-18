@@ -23,29 +23,67 @@ _PALETTE = qualitative.Plotly + qualitative.D3 + qualitative.G10
 
 
 def sat_color(i: int) -> str:
+    """Return a color for satellite i, cycling through a predefined palette.
+    
+    Args:
+        i: Satellite index (0-based).
+    
+    Returns:
+        A color string from the palette.
+    """
     return _PALETTE[i % len(_PALETTE)]
 
 
 def load_instances(filename: str) -> list:
-    """Load satellite instances from the input directory."""
+    """Load satellite instances from the input directory.
+
+    Args:
+        filename: Name of the JSON file containing satellite instances.
+
+    Returns:
+        A list of satellite instances loaded from the file.
+    """
     path = os.path.join(INPUT_DIR, filename)
     with open(path, "r") as f:
         return json.load(f)
 
 
 def get_instance(num_satellites: int, instance_index: int) -> dict:
-    """Load a specific problem instance by satellite count and index."""
+    """Load a specific problem instance by satellite count and index.
+
+    Args:
+        num_satellites: Number of satellites in the instance.
+        instance_index: Index of the instance to load.
+
+    Returns:
+        A dictionary representing the satellite instance.
+    """
     filename = f"satellite_instances_180_{num_satellites}.json"
     return load_instances(filename)[instance_index]
 
 
 def compute_midpoints(boundaries: dict) -> list:
-    """Compute the midpoint of each satellite's allowed arc."""
+    """Compute the midpoint of each satellite's allowed arc.
+
+    Args:
+        boundaries: Dict with keys 'west_boundaries' and 'east_boundaries', each a list of length
+            num_satellites with the angular boundaries for each satellite.
+
+    Returns:
+        A list of midpoint angles for each satellite.
+    """
     east = boundaries["east_boundaries"]
     west = boundaries["west_boundaries"]
     return [(east[j] + west[j]) / 2.0 for j in range(len(east))]
 
 
 def get_sorted_indices(midpoints: list) -> list:
-    """Return satellite indices sorted ascending by midpoint position."""
+    """Return satellite indices sorted ascending by midpoint position.
+
+    Args:
+        midpoints: List of midpoint angles for each satellite.
+
+    Returns:
+        A list of satellite indices sorted by their midpoint angles.
+    """
     return [idx for idx, _ in sorted(enumerate(midpoints), key=lambda x: x[1])]

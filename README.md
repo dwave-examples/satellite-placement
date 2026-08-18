@@ -178,7 +178,7 @@ demo_configs.py     — Tunable UI defaults (satellite counts, time limits, etc.
 demo_interface.py   — Dash layout builder
 demo_callbacks.py   — Dash callback logic (problem loading, solver dispatch)
 src/
-  stride.py         — Stride NL model and solve_instance()
+  stride.py         — Stride nonlinear model and solve_instance()
   pyomo.py          — Pyomo/Ipopt model and solve_instance()
   plot.py           — Plotly orbital visualization
   utils.py          — Shared helpers (midpoints, color palette, instance I/O)

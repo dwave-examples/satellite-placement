@@ -23,14 +23,30 @@ from src.utils import compute_midpoints, sat_color
 INPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "input")
 
 
-def _deg_to_xy(deg: float, r: float = 1.0) -> tuple:
-    """Convert orbital degree (0 = top, clockwise) to Cartesian (x, y)."""
+def _deg_to_xy(deg: float, r: float = 1.0) -> tuple[float, float]:
+    """Convert orbital degree (0 = top, clockwise) to Cartesian (x, y).
+
+    Args:
+        deg: Orbital degree, in [0, 360].
+        r: Optional radius; default is 1.0.
+
+    Returns:
+        Tuple of (x, y) coordinates on the circle of radius r.
+    """
     rad = math.radians(deg)
     return r * math.sin(rad), r * math.cos(rad)
 
 
 def _circular_separation(a: float, b: float) -> float:
-    """Angular separation between two orbital positions, in [0, 180]."""
+    """Angular separation between two orbital positions, in [0, 180].
+    
+    Args:
+        a: First orbital position, in degrees [0, 360].
+        b: Second orbital position, in degrees [0, 360].
+
+    Returns:
+        Angular separation between a and b, in degrees [0, 180].
+    """
     delta = abs(a - b) % 360.0
     return min(delta, 360.0 - delta)
 

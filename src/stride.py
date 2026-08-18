@@ -23,7 +23,18 @@ from dwave.system import StrideHybridSolver
 
 
 
-def create_model(interferences, boundaries):
+def create_model(interferences: np.ndarray, boundaries: dict) -> Model:
+    """Create a D-Wave mathematical model for the satellite placement problem.
+    
+    Args:
+        interferences: 2D numpy array of shape (num_satellites, num_satellites) with interference
+            values between satellites.
+        boundaries: Dict with keys 'west_boundaries' and 'east_boundaries', each a list of length
+            num_satellites with the angular boundaries for each satellite.
+
+    Returns:
+        A D-Wave mathematical Model representing the satellite placement problem.
+    """
     D = interferences
 
     W = boundaries['west_boundaries']
@@ -35,7 +46,6 @@ def create_model(interferences, boundaries):
     model.W = W = model.constant(W)
     model.E = E = model.constant(E)
 
-    # todo: check that D/W/E are all the correct size/shape
     num_satellites = W.size()
 
     model.x = x = model.list(num_satellites)
@@ -93,7 +103,7 @@ def create_model(interferences, boundaries):
 
 
 def solve_instance(instance: dict, time_limit: float) -> dict:
-    """Run the D-Wave NL Sampler on a satellite placement instance.
+    """Run the D-Wave Stride hybrid solver on a satellite placement instance.
 
     Args:
         instance: Problem instance dict (num_satellites, boundaries, interferences).
