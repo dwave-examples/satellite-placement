@@ -16,8 +16,9 @@ import json
 import os
 
 import numpy as np
-from demo_configs import INPUT_FILE_PREFIX
 from plotly.colors import qualitative
+
+from demo_configs import INPUT_FILE_PREFIX
 
 INPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "input")
 
@@ -26,10 +27,10 @@ _PALETTE = qualitative.Plotly + qualitative.D3 + qualitative.G10
 
 def sat_color(i: int) -> str:
     """Return a color for satellite i, cycling through a predefined palette.
-    
+
     Args:
         i: Satellite index (0-based).
-    
+
     Returns:
         A color string from the palette.
     """

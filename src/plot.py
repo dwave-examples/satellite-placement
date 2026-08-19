@@ -36,7 +36,7 @@ def _deg_to_xy(deg: float, r: float = 1.0) -> tuple[float, float]:
 
 def _circular_separation(a: float, b: float) -> float:
     """Angular separation between two orbital positions, in [0, 180].
-    
+
     Args:
         a: First orbital position, in degrees [0, 360].
         b: Second orbital position, in degrees [0, 360].
@@ -72,26 +72,31 @@ def create_orbit_figure(
 
     # ── Orbit ring ──────────────────────────────────────────────────────────────
     t = np.linspace(0, 360, 361)
-    fig.add_trace(go.Scatter(
-        x=list(np.sin(np.radians(t))),
-        y=list(np.cos(np.radians(t))),
-        mode="lines",
-        line=dict(color="rgba(160,165,210,0.30)", width=1.5),
-        showlegend=False,
-        hoverinfo="skip",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=list(np.sin(np.radians(t))),
+            y=list(np.cos(np.radians(t))),
+            mode="lines",
+            line=dict(color="rgba(160,165,210,0.30)", width=1.5),
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
 
     # ── Degree tick labels ───────────────────────────────────────────────────────
     for deg in range(0, 360, 30):
         xm, ym = _deg_to_xy(deg, r=1.12)
-        fig.add_trace(go.Scatter(
-            x=[xm], y=[ym],
-            mode="text",
-            text=[f"{deg}°"],
-            textfont=dict(size=10.5, color="rgba(160,165,210,0.9)"),
-            showlegend=False,
-            hoverinfo="skip",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=[xm],
+                y=[ym],
+                mode="text",
+                text=[f"{deg}°"],
+                textfont=dict(size=10.5, color="rgba(160,165,210,0.9)"),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
 
     # ── Interference chords ──────────────────────────────────────────────────────
     # Anchor chords to the optimized positions on results plots; fall back to the
@@ -128,24 +133,24 @@ def create_orbit_figure(
                 pressure = d / max(sep, 1e-6)
                 opacity = min(0.05 + 0.95 * (pressure / ref_pressure), 1.0)
                 color = f"rgba(255,195,60,{opacity:.2f})"
-                hovertext = (
-                    f"Interference {i}↔{j}: weight {d:.3f}, "
-                    f"separation {sep:.1f}°"
-                )
+                hovertext = f"Interference {i}↔{j}: weight {d:.3f}, " f"separation {sep:.1f}°"
             else:
                 opacity = 0.07 + 0.40 * (d / max_d)
                 color = f"rgba(255,195,60,{opacity:.2f})"
                 hovertext = f"Interference {i}↔{j}: {d:.3f}"
             xi, yi = _deg_to_xy(chord_pts[i])
             xj, yj = _deg_to_xy(chord_pts[j])
-            fig.add_trace(go.Scatter(
-                x=[xi, xj], y=[yi, yj],
-                mode="lines",
-                line=dict(color=color, width=width),
-                showlegend=False,
-                hoverinfo="text",
-                hovertext=hovertext,
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=[xi, xj],
+                    y=[yi, yj],
+                    mode="lines",
+                    line=dict(color=color, width=width),
+                    showlegend=False,
+                    hoverinfo="text",
+                    hovertext=hovertext,
+                )
+            )
 
     # ── Satellite arcs (allowed ranges) ─────────────────────────────────────────
     r_arc = 1.055
@@ -155,56 +160,67 @@ def create_orbit_figure(
         arc = np.linspace(west[i], east[i], num_pts)
         x_arc = [math.sin(math.radians(d)) * r_arc for d in arc]
         y_arc = [math.cos(math.radians(d)) * r_arc for d in arc]
-        fig.add_trace(go.Scatter(
-            x=x_arc, y=y_arc,
-            mode="lines",
-            line=dict(color=sat_color(i), width=10),
-            opacity=0.40,
-            name=f"Sat {i}  {west[i]:.0f}°–{east[i]:.0f}°",
-            showlegend=True,
-            hoverinfo="text",
-            hovertext=f"Satellite {i}: allowed [{west[i]:.1f}°, {east[i]:.1f}°]",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x_arc,
+                y=y_arc,
+                mode="lines",
+                line=dict(color=sat_color(i), width=10),
+                opacity=0.40,
+                name=f"Sat {i}  {west[i]:.0f}°–{east[i]:.0f}°",
+                showlegend=True,
+                hoverinfo="text",
+                hovertext=f"Satellite {i}: allowed [{west[i]:.1f}°, {east[i]:.1f}°]",
+            )
+        )
 
     # ── Initial positions (hollow circles) ──────────────────────────────────────
     if not positions:  # Only shown on the input/instance view.
         for i in range(num_satellites):
             xm, ym = _deg_to_xy(midpoints[i], r=r_arc)
-            fig.add_trace(go.Scatter(
-                x=[xm], y=[ym],
-                mode="markers+text",
-                marker=dict(
-                    color=sat_color(i), size=14,
-                    symbol="circle-open",
-                    line=dict(width=2.5, color=sat_color(i)),
-                ),
-                text=[f"  {i}"],
-                textposition="middle right",
-                textfont=dict(size=14, color=sat_color(i)),
-                showlegend=False,
-                hoverinfo="text",
-                hovertext=f"Satellite {i} initial: {midpoints[i]:.1f}°",
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=[xm],
+                    y=[ym],
+                    mode="markers+text",
+                    marker=dict(
+                        color=sat_color(i),
+                        size=14,
+                        symbol="circle-open",
+                        line=dict(width=2.5, color=sat_color(i)),
+                    ),
+                    text=[f"  {i}"],
+                    textposition="middle right",
+                    textfont=dict(size=14, color=sat_color(i)),
+                    showlegend=False,
+                    hoverinfo="text",
+                    hovertext=f"Satellite {i} initial: {midpoints[i]:.1f}°",
+                )
+            )
 
     # ── Optimized positions (filled circles) ─────────────────────────────────────
     if positions:
         for i in range(num_satellites):
             xp, yp = _deg_to_xy(positions[i], r=r_arc)
-            fig.add_trace(go.Scatter(
-                x=[xp], y=[yp],
-                mode="markers+text",
-                marker=dict(
-                    color=sat_color(i), size=17,
-                    symbol="circle",
-                    line=dict(width=2.5, color="white"),
-                ),
-                text=[f"  {i}"],
-                textposition="middle right",
-                textfont=dict(size=14, color=sat_color(i)),
-                showlegend=False,
-                hoverinfo="text",
-                hovertext=f"Satellite {i} → {positions[i]:.1f}°",
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=[xp],
+                    y=[yp],
+                    mode="markers+text",
+                    marker=dict(
+                        color=sat_color(i),
+                        size=17,
+                        symbol="circle",
+                        line=dict(width=2.5, color="white"),
+                    ),
+                    text=[f"  {i}"],
+                    textposition="middle right",
+                    textfont=dict(size=14, color=sat_color(i)),
+                    showlegend=False,
+                    hoverinfo="text",
+                    hovertext=f"Satellite {i} → {positions[i]:.1f}°",
+                )
+            )
 
     # ── Layout ───────────────────────────────────────────────────────────────────
     fig.update_layout(
@@ -215,8 +231,10 @@ def create_orbit_figure(
         margin=dict(l=0, r=0, t=0, b=10),
         legend=dict(
             orientation="h",
-            yanchor="top", y=-0.01,
-            xanchor="center", x=0.5,
+            yanchor="top",
+            y=-0.01,
+            xanchor="center",
+            x=0.5,
             font=dict(size=11, color="rgb(200,205,230)"),
             bgcolor="rgba(0,0,0,0)",
             itemsizing="constant",

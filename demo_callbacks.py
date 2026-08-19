@@ -16,19 +16,23 @@ from __future__ import annotations
 
 import math
 
-from demo_configs import STRIDE_TAB_LABEL, PYOMO_TAB_LABEL
-import numpy as np
 import dash
-from dash import MATCH, html, ctx
-from dash.dependencies import Input, Output, State
+import numpy as np
 import plotly.graph_objects as go
+from dash import MATCH, ctx, html
+from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from demo_interface import generate_instance_stats, generate_meter, generate_results_layout, metric_card
+from demo_configs import PYOMO_TAB_LABEL, STRIDE_TAB_LABEL
+from demo_interface import (
+    generate_instance_stats,
+    generate_meter,
+    generate_results_layout,
+    metric_card,
+)
 from src.demo_enums import SolverType
-from src.utils import get_instance, get_interference_matrix
 from src.plot import create_orbit_figure
-
+from src.utils import get_instance, get_interference_matrix
 
 _SUPERSCRIPT = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
 
@@ -50,7 +54,7 @@ def _format_orderings(n: int) -> str:
     if orderings < 1_000_000:
         return f"{orderings:,}"
     exp = len(str(orderings)) - 1
-    mantissa = orderings / 10 ** exp
+    mantissa = orderings / 10**exp
     return f"{mantissa:.1f} × 10{str(exp).translate(_SUPERSCRIPT)}"
 
 
@@ -96,7 +100,9 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> tuple[s
         Input("instance-index-slider", "value"),
     ],
 )
-def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Figure, list, bool, bool, str]:
+def render_input_state(
+    num_satellites: str, instance_index: int
+) -> tuple[go.Figure, list, bool, bool, str]:
     """Render the problem-instance orbital diagram on the Input tab.
 
     Triggered on page load and whenever the instance selection changes.
@@ -227,7 +233,7 @@ def update_tab_loading_state(
 )
 def enable_tabs_when_done(
     running_stride: bool, running_pyomo: bool, solvers: list[str]
-    ) -> tuple[bool, str, bool, str]:
+) -> tuple[bool, str, bool, str]:
     """Enable the results tabs only once every selected solver has finished.
 
     Keeps both tabs in their disabled 'Loading' state until all selected solvers
@@ -312,7 +318,7 @@ def run_optimization_stride(
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-    ) -> tuple[str, bool, dict]:
+) -> tuple[str, bool, dict]:
     """Run the Stride solver when the ``Run Optimization`` button is clicked.
 
     Runs as a background callback: loads the selected problem instance, solves it with the
@@ -342,6 +348,7 @@ def run_optimization_stride(
 
     try:
         from src.stride import solve_instance as solve_stride
+
         stride_result = solve_stride(instance, time_limit)
     except Exception as exc:
         stride_result = _error_result(exc)
@@ -406,6 +413,7 @@ def run_optimization_pyomo(
 
     try:
         from src.pyomo import solve_instance as solve_pyomo
+
         pyomo_result = solve_pyomo(instance, time_limit)
     except Exception as exc:
         pyomo_result = _error_result(exc)
@@ -439,10 +447,10 @@ def _error_result(exc: Exception) -> dict:
 
 def _solution_store_entry(result: dict) -> dict | None:
     """Build the dcc.Store payload for a solver result (None if unusable).
-    
+
     Args:
         result: The solver result dict.
-    
+
     Returns:
         A dict with 'objective' and 'positions' keys, or None if the result is not usable.
     """

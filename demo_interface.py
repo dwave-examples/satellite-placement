@@ -13,12 +13,14 @@
 # limitations under the License.
 
 """This file stores the Dash HTML layout for the app."""
+
 from __future__ import annotations
+
 from enum import EnumMeta
 
-from dash import dcc, html
 import dash_mantine_components as dmc
 import plotly.graph_objects as go
+from dash import dcc, html
 
 from demo_configs import (
     DESCRIPTION,
@@ -105,7 +107,9 @@ def checklist(label: str, id: str, options: list, values: list, inline: bool = T
                 value=values,
                 children=dmc.Group(
                     [
-                        dmc.Checkbox(label=option["label"], value=option["value"], color=THEME_COLOR)
+                        dmc.Checkbox(
+                            label=option["label"], value=option["value"], color=THEME_COLOR
+                        )
                         for option in options
                     ],
                 ),
@@ -114,7 +118,7 @@ def checklist(label: str, id: str, options: list, values: list, inline: bool = T
     )
 
 
-def input(label: str, id: str, configs: dict, type: str="number") -> html.Div:
+def input(label: str, id: str, configs: dict, type: str = "number") -> html.Div:
     """Input element for either text or number input.
 
     Args:
@@ -127,12 +131,16 @@ def input(label: str, id: str, configs: dict, type: str="number") -> html.Div:
         className="input-wrapper",
         children=[
             html.Label(label, htmlFor=id),
-            dmc.TextInput(
-                id=id,
-                **configs,
-            ) if type == "text" else dmc.NumberInput(
-                id=id,
-                **configs,
+            (
+                dmc.TextInput(
+                    id=id,
+                    **configs,
+                )
+                if type == "text"
+                else dmc.NumberInput(
+                    id=id,
+                    **configs,
+                )
             ),
         ],
     )
@@ -227,13 +235,7 @@ def generate_table(table_data: dict[str, list]) -> html.Table:
         children=[
             html.Thead(html.Tr([html.Th(table_header) for table_header in table_data.keys()])),
             html.Tbody(
-                [
-                    html.Tr(
-                        [
-                            html.Td(column[i]) for column in table_columns
-                        ]
-                    ) for i in range(num_rows)
-                ]
+                [html.Tr([html.Td(column[i]) for column in table_columns]) for i in range(num_rows)]
             ),
         ],
     )
@@ -276,7 +278,7 @@ def metric_card(
     additional_html: list | None = None,
 ) -> html.Div:
     """Generate a metric card for displaying a single metric.
-    
+
     Args:
         label: The label for the metric.
         value_str: The value of the metric as a string.
@@ -292,7 +294,8 @@ def metric_card(
         children=[
             html.Div(label, className="metric-label"),
             html.Div(value_str, className="metric-value"),
-        ] + (additional_html if additional_html is not None else []),
+        ]
+        + (additional_html if additional_html is not None else []),
     )
 
 
@@ -322,12 +325,8 @@ def generate_results_layout(
                 type="circle",
                 color=THEME_COLOR,
                 children=html.Div(
-                    dcc.Graph(
-                        figure=fig,
-                        responsive=True,
-                        config={"displayModeBar": False}
-                    ),
-                    className="graph-wrapper"
+                    dcc.Graph(figure=fig, responsive=True, config={"displayModeBar": False}),
+                    className="graph-wrapper",
                 ),
             ),
             html.Div(
@@ -477,9 +476,11 @@ def create_interface() -> html.Div:
                                                                     dcc.Graph(
                                                                         id="input-graph",
                                                                         responsive=True,
-                                                                        config={"displayModeBar": False}
+                                                                        config={
+                                                                            "displayModeBar": False
+                                                                        },
                                                                     ),
-                                                                    className="graph-wrapper"
+                                                                    className="graph-wrapper",
                                                                 ),
                                                             ),
                                                             html.Div(
@@ -494,9 +495,9 @@ def create_interface() -> html.Div:
                                                                     ),
                                                                 ],
                                                             ),
-                                                        ]
+                                                        ],
                                                     ),
-                                                ]
+                                                ],
                                             )
                                         ],
                                     ),

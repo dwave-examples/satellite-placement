@@ -15,17 +15,14 @@
 import itertools
 
 import numpy as np
-
-from dwave.optimization import linprog
-from dwave.optimization import Model
-from dwave.optimization.mathematical import hstack, concatenate
+from dwave.optimization import Model, linprog
+from dwave.optimization.mathematical import concatenate, hstack
 from dwave.system import StrideHybridSolver
-
 
 
 def create_model(interferences: np.ndarray, boundaries: dict) -> Model:
     """Create a D-Wave mathematical model for the satellite placement problem.
-    
+
     Args:
         interferences: 2D numpy array of shape (num_satellites, num_satellites) with interference
             values between satellites.
@@ -37,8 +34,8 @@ def create_model(interferences: np.ndarray, boundaries: dict) -> Model:
     """
     D = interferences
 
-    W = boundaries['west_boundaries']
-    E = boundaries['east_boundaries']
+    W = boundaries["west_boundaries"]
+    E = boundaries["east_boundaries"]
 
     model = Model()
 
@@ -112,6 +109,7 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
         Dict with keys: objective, positions, feasible, solve_time.
     """
     import time as time_module
+
     from src.utils import compute_midpoints, get_interference_matrix, get_sorted_indices
 
     num_satellites = instance["num_satellites"]

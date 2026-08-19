@@ -16,10 +16,16 @@
 import numpy as np
 
 from pyomo.environ import (
-    ConcreteModel, Constraint, Objective, RangeSet, Reals, SolverFactory,
-    Var, minimize, value,
+    ConcreteModel,
+    Constraint,
+    Objective,
+    RangeSet,
+    Reals,
+    SolverFactory,
+    Var,
+    minimize,
+    value,
 )
-
 from src.utils import compute_midpoints, get_interference_matrix
 
 
@@ -36,48 +42,53 @@ def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarra
     Returns:
         A Pyomo ConcreteModel representing the satellite placement problem.
     """
-    west_boundaries = boundaries['west_boundaries']
-    east_boundaries = boundaries['east_boundaries']
+    west_boundaries = boundaries["west_boundaries"]
+    east_boundaries = boundaries["east_boundaries"]
 
     model = ConcreteModel()
 
     model.A = RangeSet(num_satellites)
     model.B = RangeSet(num_satellites)
 
-    model.z = Var(domain = Reals, bounds = (0,1000))
+    model.z = Var(domain=Reals, bounds=(0, 1000))
 
-    model.obj = Objective(expr = -model.z, sense = minimize)
+    model.obj = Objective(expr=-model.z, sense=minimize)
 
     def theta_bounds(model, i):
-        return (west_boundaries[i-1], east_boundaries[i-1])
+        return (west_boundaries[i - 1], east_boundaries[i - 1])
 
     midpoints = compute_midpoints(boundaries)
 
     model.thetas = Var(model.A, domain=Reals, bounds=theta_bounds)
 
     for i in model.A:
-        model.thetas[i].value = midpoints[i-1]
+        model.thetas[i].value = midpoints[i - 1]
 
     def constraint_rule1(model: ConcreteModel, i: int, j: int):
         """Constraint to ensure that the angular separation between satellites i and j is at least
-            the interference value between them, scaled by z.
+        the interference value between them, scaled by z.
         """
-        if i<j:
-            return -interferences[i-1,j-1]*model.z + abs(model.thetas[j] - model.thetas[i]) >= 0
+        if i < j:
+            return (
+                -interferences[i - 1, j - 1] * model.z + abs(model.thetas[j] - model.thetas[i]) >= 0
+            )
         else:
             return Constraint.Skip
 
     def constraint_rule2(model: ConcreteModel, i: int, j: int):
         """Constraint to ensure that the angular separation between satellites i and j is at most
-            360 degrees minus the interference value between them, scaled by z.
+        360 degrees minus the interference value between them, scaled by z.
         """
-        if i<j:
-            return abs(model.thetas[j] - model.thetas[i]) + interferences[i-1,j-1]*model.z <= 360
+        if i < j:
+            return (
+                abs(model.thetas[j] - model.thetas[i]) + interferences[i - 1, j - 1] * model.z
+                <= 360
+            )
         else:
             return Constraint.Feasible
 
-    model.constr1 = Constraint(model.A, model.B, rule = constraint_rule1)
-    model.constr2 = Constraint(model.A, model.B, rule = constraint_rule2)
+    model.constr1 = Constraint(model.A, model.B, rule=constraint_rule1)
+    model.constr2 = Constraint(model.A, model.B, rule=constraint_rule2)
 
     return model
 
