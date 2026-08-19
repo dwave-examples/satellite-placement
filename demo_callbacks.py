@@ -438,7 +438,14 @@ def _error_result(exc: Exception) -> dict:
 
 
 def _solution_store_entry(result: dict) -> dict | None:
-    """Build the dcc.Store payload for a solver result (None if unusable)."""
+    """Build the dcc.Store payload for a solver result (None if unusable).
+    
+    Args:
+        result: The solver result dict.
+    
+    Returns:
+        A dict with 'objective' and 'positions' keys, or None if the result is not usable.
+    """
     if not result.get("feasible") or not result.get("objective") or not result.get("positions"):
         return None
     return {"objective": result["objective"], "positions": list(result["positions"])}

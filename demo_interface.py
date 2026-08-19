@@ -273,7 +273,7 @@ def metric_card(
     label: str,
     value_str: str,
     class_name: str = "",
-    additional_html: list = None,
+    additional_html: list | None = None,
 ) -> html.Div:
     """Generate a metric card for displaying a single metric.
     
@@ -300,7 +300,7 @@ def generate_results_layout(
     fig: go.Figure,
     objective: float,
     table_data: dict[str, list],
-    comparison_card: html.Div = None,
+    comparison_card: html.Div | None = None,
 ) -> html.Div:
     """Generate a Div containing the results of the optimization.
 
