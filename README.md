@@ -161,7 +161,7 @@ where the constraints expand to:
 ```
 
 `c = (0,…,0,−1)`, `b = (0,…,0, 360,…,360)`, and bounds `l`/`u` are the
-west/east boundaries reordered by σ.
+west/east boundaries reordered by σ, extended with _z_'s bounds [0, 1000].
 
 ### Implementation
 

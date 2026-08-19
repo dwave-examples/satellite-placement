@@ -26,7 +26,7 @@ from dash.exceptions import PreventUpdate
 
 from demo_interface import generate_instance_stats, generate_meter, generate_results_layout, metric_card
 from src.demo_enums import SolverType
-from src.utils import get_instance
+from src.utils import get_instance, get_interference_matrix
 from src.plot import create_orbit_figure
 
 
@@ -119,7 +119,7 @@ def render_input_state(num_satellites: str, instance_index: int) -> tuple[go.Fig
     boundaries = instance["boundaries"]
     west = boundaries["west_boundaries"]
     east = boundaries["east_boundaries"]
-    interferences = np.array(instance["interferences"]).reshape(n, n)
+    interferences = get_interference_matrix(instance)
 
     # Count significant interference pairs
     n_pairs = int(np.sum(np.triu(interferences, k=1) > 0.1))
@@ -313,12 +313,10 @@ def run_optimization_stride(
     num_satellites_val: str,
     instance_index: int,
     ) -> tuple[str, bool, dict]:
-    """Runs the optimization and updates UI accordingly.
+    """Run the Stride solver when the ``Run Optimization`` button is clicked.
 
-    This is the main function which is called when the ``Run Optimization`` button is clicked.
-    This function takes in all form values and runs the optimization, updates the run/cancel
-    buttons, deactivates (and reactivates) the results tab, and updates all relevant HTML
-    components.
+    Runs as a background callback: loads the selected problem instance, solves it with the
+    Stride hybrid solver (if selected), and returns the results section for the Stride tab.
 
     Args:
         run_click: The (total) number of times the run button has been clicked.
@@ -346,7 +344,7 @@ def run_optimization_stride(
         from src.stride import solve_instance as solve_stride
         stride_result = solve_stride(instance, time_limit)
     except Exception as exc:
-        stride_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
+        stride_result = _error_result(exc)
 
     stride_solution = _solution_store_entry(stride_result)
 
@@ -379,12 +377,10 @@ def run_optimization_pyomo(
     num_satellites_val: str,
     instance_index: int,
 ) -> tuple[str, bool, dict]:
-    """Runs the optimization and updates UI accordingly.
+    """Run the Pyomo/Ipopt solver when the ``Run Optimization`` button is clicked.
 
-    This is the main function which is called when the ``Run Optimization`` button is clicked.
-    This function takes in all form values and runs the optimization, updates the run/cancel
-    buttons, deactivates (and reactivates) the results tab, and updates all relevant HTML
-    components.
+    Runs as a background callback: loads the selected problem instance, solves it with
+    Pyomo and Ipopt (if selected), and returns the results section for the Pyomo tab.
 
     Args:
         run_click: The (total) number of times the run button has been clicked.
@@ -412,7 +408,7 @@ def run_optimization_pyomo(
         from src.pyomo import solve_instance as solve_pyomo
         pyomo_result = solve_pyomo(instance, time_limit)
     except Exception as exc:
-        pyomo_result = {"error": str(exc), "objective": None, "positions": [], "feasible": False, "solve_time": 0}
+        pyomo_result = _error_result(exc)
 
     pyomo_solution = _solution_store_entry(pyomo_result)
 
@@ -421,6 +417,24 @@ def run_optimization_pyomo(
         False,
         pyomo_solution,
     )
+
+
+def _error_result(exc: Exception) -> dict:
+    """Build the solver-result dict for a run that raised an exception.
+
+    Args:
+        exc: The exception raised while solving.
+
+    Returns:
+        A result dict with an 'error' message and empty solution fields.
+    """
+    return {
+        "error": str(exc),
+        "objective": None,
+        "positions": [],
+        "feasible": False,
+        "solve_time": 0,
+    }
 
 
 def _solution_store_entry(result: dict) -> dict | None:
@@ -556,6 +570,17 @@ def _result_section(
             html.Div(
                 className="solver-error",
                 children=[html.Strong(f"{solver_label} error: "), html.Span(result["error"])],
+            )
+        ]
+
+    if not positions:
+        return [
+            html.Div(
+                className="solver-error",
+                children=[
+                    html.Strong(f"{solver_label}: "),
+                    html.Span("no feasible solution found within the time limit."),
+                ],
             )
         ]
 

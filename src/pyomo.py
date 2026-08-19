@@ -20,6 +20,8 @@ from pyomo.environ import (
     Var, minimize, value,
 )
 
+from src.utils import compute_midpoints, get_interference_matrix
+
 
 def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarray) -> ConcreteModel:
     """Create a Pyomo model for the satellite placement problem.
@@ -49,12 +51,7 @@ def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarra
     def theta_bounds(model, i):
         return (west_boundaries[i-1], east_boundaries[i-1])
 
-    midpoints = []
-    east = boundaries['east_boundaries']
-    west = boundaries['west_boundaries']
-    for j in range(num_satellites):
-        midpoint = (east[j] + west[j])/2
-        midpoints.append(midpoint)
+    midpoints = compute_midpoints(boundaries)
 
     model.thetas = Var(model.A, domain=Reals, bounds=theta_bounds)
 
@@ -94,13 +91,15 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
 
     Returns:
         Dict with keys: objective, positions, feasible, solve_time.
-        On error, includes an 'error' key with a message string.
+
+    Raises:
+        RuntimeError: If the Ipopt solver is not available.
     """
     import time as time_module
 
     num_satellites = instance["num_satellites"]
     boundaries = instance["boundaries"]
-    interferences = np.array(instance["interferences"]).reshape(num_satellites, num_satellites)
+    interferences = get_interference_matrix(instance)
 
     model = create_model(num_satellites, boundaries, interferences)
 
@@ -108,9 +107,9 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
     solver = SolverFactory("ipopt")
     if not solver.available():
         raise RuntimeError(
-            "Ipopt solver not found on PATH. "
-            "Install it with: brew install ipopt  (macOS) or "
-            "apt install coinor-libipopt-dev  (Ubuntu/Debian)."
+            "Ipopt solver not found. "
+            "Install it with `brew install ipopt`  (macOS) or "
+            "`sudo apt install coinor-ipopt coinor-libipopt-dev`  (Ubuntu/Debian)."
         )
     solver.options["max_cpu_time"] = time_limit
     solver.solve(model)

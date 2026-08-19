@@ -17,7 +17,7 @@ import math
 import numpy as np
 import plotly.graph_objects as go
 
-from src.utils import compute_midpoints, sat_color
+from src.utils import compute_midpoints, get_interference_matrix, sat_color
 
 
 def _deg_to_xy(deg: float, r: float = 1.0) -> tuple[float, float]:
@@ -65,7 +65,7 @@ def create_orbit_figure(
     boundaries = instance["boundaries"]
     west = boundaries["west_boundaries"]
     east = boundaries["east_boundaries"]
-    interferences = np.array(instance["interferences"]).reshape(num_satellites, num_satellites)
+    interferences = get_interference_matrix(instance)
     midpoints = compute_midpoints(boundaries)
 
     fig = go.Figure()

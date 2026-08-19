@@ -15,6 +15,8 @@
 import json
 import os
 
+import numpy as np
+from demo_configs import INPUT_FILE_PREFIX
 from plotly.colors import qualitative
 
 INPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "input")
@@ -58,8 +60,22 @@ def get_instance(num_satellites: int, instance_index: int) -> dict:
     Returns:
         A dictionary representing the satellite instance.
     """
-    filename = f"satellite_instances_180_{num_satellites}.json"
+    filename = f"{INPUT_FILE_PREFIX}{num_satellites}.json"
     return load_instances(filename)[instance_index]
+
+
+def get_interference_matrix(instance: dict) -> np.ndarray:
+    """Return an instance's interference values as a square matrix.
+
+    Args:
+        instance: Problem instance dict (num_satellites, boundaries, interferences).
+
+    Returns:
+        A 2D numpy array of shape (num_satellites, num_satellites) with interference
+        values between satellites.
+    """
+    num_satellites = instance["num_satellites"]
+    return np.array(instance["interferences"]).reshape(num_satellites, num_satellites)
 
 
 def compute_midpoints(boundaries: dict) -> list:

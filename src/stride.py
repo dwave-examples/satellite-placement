@@ -110,14 +110,13 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
 
     Returns:
         Dict with keys: objective, positions, feasible, solve_time.
-        On error, includes an 'error' key with a message string.
     """
     import time as time_module
-    from src.utils import compute_midpoints, get_sorted_indices
+    from src.utils import compute_midpoints, get_interference_matrix, get_sorted_indices
 
     num_satellites = instance["num_satellites"]
     boundaries = instance["boundaries"]
-    interferences = np.array(instance["interferences"]).reshape(num_satellites, num_satellites)
+    interferences = get_interference_matrix(instance)
 
     midpoints = compute_midpoints(boundaries)
     sorted_indices = get_sorted_indices(midpoints)

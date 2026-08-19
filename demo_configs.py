@@ -27,6 +27,8 @@ satellite within its allowed arc.
 STRIDE_TAB_LABEL = "Stride"
 PYOMO_TAB_LABEL = "Pyomo + Ipopt"
 
+INPUT_FILE_PREFIX = "satellite_instances_180_"
+
 #######################################
 # Sliders, buttons and option entries #
 #######################################
