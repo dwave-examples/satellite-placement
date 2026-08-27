@@ -76,9 +76,12 @@ def test_error_result():
             {"objective": 25.0, "positions": [1.0, 2.0], "feasible": True},
             {"objective": 25.0, "positions": [1.0, 2.0]},
         ),
+        (
+            {"objective": 0.0, "positions": [1.0, 2.0], "feasible": True},
+            {"objective": 0.0, "positions": [1.0, 2.0]}
+        ),
         ({"objective": 25.0, "positions": [1.0, 2.0], "feasible": False}, None),
         ({"objective": None, "positions": [1.0, 2.0], "feasible": True}, None),
-        ({"objective": 0.0, "positions": [1.0, 2.0], "feasible": True}, None),
         ({"objective": 25.0, "positions": [], "feasible": True}, None),
     ],
 )
