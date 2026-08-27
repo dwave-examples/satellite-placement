@@ -318,7 +318,7 @@ def run_optimization_stride(
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-) -> tuple[str, bool, dict]:
+) -> tuple[list, bool, dict]:
     """Run the Stride solver when the ``Run Optimization`` button is clicked.
 
     Runs as a background callback: loads the selected problem instance, solves it with the
@@ -334,7 +334,7 @@ def run_optimization_stride(
     Returns:
         A tuple containing:
 
-        - str: The results to display in the Stride results tab.
+        - list: The results to display in the Stride results tab.
         - bool: Whether this is a Stride run.
         - dict: The Stride solution store data.
     """
@@ -347,9 +347,9 @@ def run_optimization_stride(
     stride_result: dict = {}
 
     try:
-        from src.stride import solve_instance as solve_stride
+        from src.stride import solve_instance
 
-        stride_result = solve_stride(instance, time_limit)
+        stride_result = solve_instance(instance, time_limit)
     except Exception as exc:
         stride_result = _error_result(exc)
 
@@ -383,7 +383,7 @@ def run_optimization_pyomo(
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-) -> tuple[str, bool, dict]:
+)-> tuple[list, bool, dict]:
     """Run the Pyomo/Ipopt solver when the ``Run Optimization`` button is clicked.
 
     Runs as a background callback: loads the selected problem instance, solves it with
@@ -399,7 +399,7 @@ def run_optimization_pyomo(
     Returns:
         A tuple containing:
 
-        - str: The results to display in the Pyomo results tab.
+        - list: The results to display in the Pyomo results tab.
         - bool: Whether this is a Pyomo run.
         - dict: The Pyomo solution store data.
     """
@@ -412,9 +412,9 @@ def run_optimization_pyomo(
     pyomo_result: dict = {}
 
     try:
-        from src.pyomo import solve_instance as solve_pyomo
+        from src.pyomo import solve_instance
 
-        pyomo_result = solve_pyomo(instance, time_limit)
+        pyomo_result = solve_instance(instance, time_limit)
     except Exception as exc:
         pyomo_result = _error_result(exc)
 
@@ -522,8 +522,8 @@ def update_solution_comparison(
         - list: The Pyomo results section with its comparison card.
     """
     solutions = {"stride": stride_solution, "pyomo": pyomo_solution}
-    available = {k: s for k, s in solutions.items() if s}
-    if not available:
+    available_solutions = {key: solution for key, solution in solutions.items() if solution}
+    if not available_solutions:
         raise PreventUpdate
 
     instance = get_instance(int(num_satellites_val), instance_index)

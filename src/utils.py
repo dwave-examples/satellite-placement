@@ -37,20 +37,6 @@ def sat_color(i: int) -> str:
     return _PALETTE[i % len(_PALETTE)]
 
 
-def load_instances(filename: str) -> list:
-    """Load satellite instances from the input directory.
-
-    Args:
-        filename: Name of the JSON file containing satellite instances.
-
-    Returns:
-        A list of satellite instances loaded from the file.
-    """
-    path = os.path.join(INPUT_DIR, filename)
-    with open(path, "r") as f:
-        return json.load(f)
-
-
 def get_instance(num_satellites: int, instance_index: int) -> dict:
     """Load a specific problem instance by satellite count and index.
 
@@ -61,8 +47,9 @@ def get_instance(num_satellites: int, instance_index: int) -> dict:
     Returns:
         A dictionary representing the satellite instance.
     """
-    filename = f"{INPUT_FILE_PREFIX}{num_satellites}.json"
-    return load_instances(filename)[instance_index]
+    path = os.path.join(INPUT_DIR, f"{INPUT_FILE_PREFIX}{num_satellites}.json")
+    with open(path, "r") as f:
+        return json.load(f)[instance_index]
 
 
 def get_interference_matrix(instance: dict) -> np.ndarray:

@@ -68,6 +68,7 @@ def create_model(interferences: np.ndarray, boundaries: dict) -> Model:
     for row, (i, j) in enumerate(combinations):
         theta[row][i] = +1
         theta[row][j] = -1
+
     model.theta = theta = model.constant(np.vstack((theta, -theta)))
 
     d_combinations = d[from_, to_]

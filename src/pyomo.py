@@ -72,8 +72,8 @@ def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarra
             return (
                 -interferences[i - 1, j - 1] * model.z + abs(model.thetas[j] - model.thetas[i]) >= 0
             )
-        else:
-            return Constraint.Skip
+
+        return Constraint.Skip
 
     def constraint_rule2(model: ConcreteModel, i: int, j: int):
         """Constraint to ensure that the angular separation between satellites i and j is at most
@@ -84,8 +84,8 @@ def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarra
                 abs(model.thetas[j] - model.thetas[i]) + interferences[i - 1, j - 1] * model.z
                 <= 360
             )
-        else:
-            return Constraint.Feasible
+
+        return Constraint.Feasible
 
     model.constr1 = Constraint(model.A, model.B, rule=constraint_rule1)
     model.constr2 = Constraint(model.A, model.B, rule=constraint_rule2)
@@ -119,9 +119,10 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
     if not solver.available():
         raise RuntimeError(
             "Ipopt solver not found. "
-            "Install it with `brew install ipopt`  (macOS) or "
+            "Install it with `brew install ipopt` (macOS) or "
             "`sudo apt install coinor-ipopt coinor-libipopt-dev`  (Ubuntu/Debian)."
         )
+
     solver.options["max_cpu_time"] = time_limit
     solver.solve(model)
     elapsed = time_module.time() - start
