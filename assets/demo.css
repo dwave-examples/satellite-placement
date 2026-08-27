@@ -86,11 +86,11 @@ table:focus-visible {
 }
 
 .solver-error {
-    padding: 0.75rem 1rem;
+    padding: 1rem 2rem;
     background: rgba(170,58,60,0.12);
     border: 1px solid rgba(170,58,60,0.35);
     border-radius: var(--border-radius);
-    margin: 0.5rem 0;
+    margin: 1rem;
     font-size: 0.9rem;
 }
 
@@ -180,6 +180,7 @@ table:focus-visible {
 
 .left-column {
     background-image: url("/assets/background2.svg");
+    background-size: cover;
 }
 
 label,

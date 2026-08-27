@@ -25,6 +25,7 @@ from dash.exceptions import PreventUpdate
 
 from demo_configs import PYOMO_TAB_LABEL, STRIDE_TAB_LABEL
 from demo_interface import (
+    generate_error_layout,
     generate_instance_stats,
     generate_meter,
     generate_results_layout,
@@ -540,6 +541,7 @@ def update_solution_comparison(
         if not solution:
             outputs.append(dash.no_update)
             continue
+
         result = {
             "objective": solution["objective"],
             "positions": solution["positions"],
@@ -581,22 +583,11 @@ def _result_section(
     positions = result.get("positions") or []
 
     if result.get("error"):
-        return [
-            html.Div(
-                className="solver-error",
-                children=[html.Strong(f"{solver_label} error: "), html.Span(result["error"])],
-            )
-        ]
+        return [generate_error_layout(f"{solver_label} error", result["error"])]
 
     if not positions:
         return [
-            html.Div(
-                className="solver-error",
-                children=[
-                    html.Strong(f"{solver_label}: "),
-                    html.Span("no feasible solution found within the time limit."),
-                ],
-            )
+            generate_error_layout(solver_label, "no feasible solution found within the time limit.")
         ]
 
     z = result.get("objective") or 0.0

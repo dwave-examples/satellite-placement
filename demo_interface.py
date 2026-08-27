@@ -346,6 +346,25 @@ def generate_results_layout(
     )
 
 
+def generate_error_layout(error_title: str, error_message: str) -> html.Div:
+    """Generate a Div containing an error message.
+
+    Args:
+        error_title: The title of the error message.
+        error_message: The error message to display.
+
+    Returns:
+        A Div containing the error message.
+    """
+    return html.Div(
+        className="solver-error",
+        children=[
+            html.Strong(f"{error_title}: "),
+            html.Span(error_message),
+        ],
+    )
+
+
 def create_interface() -> html.Div:
     """Create the main application interface."""
     return html.Div(
