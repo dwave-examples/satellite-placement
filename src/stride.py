@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import itertools
+import time as time_module
 
 import numpy as np
 from dwave.optimization import Model, linprog
@@ -109,8 +110,6 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
     Returns:
         Dict with keys: objective, positions, feasible, solve_time.
     """
-    import time as time_module
-
     from src.utils import compute_midpoints, get_interference_matrix, get_sorted_indices
 
     num_satellites = instance["num_satellites"]

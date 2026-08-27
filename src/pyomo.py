@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import time as time_module
+
 import numpy as np
 
 from pyomo.environ import (
@@ -106,8 +108,6 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
     Raises:
         RuntimeError: If the Ipopt solver is not available.
     """
-    import time as time_module
-
     num_satellites = instance["num_satellites"]
     boundaries = instance["boundaries"]
     interferences = get_interference_matrix(instance)

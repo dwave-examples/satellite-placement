@@ -383,7 +383,7 @@ def run_optimization_pyomo(
     time_limit: float,
     num_satellites_val: str,
     instance_index: int,
-)-> tuple[list, bool, dict]:
+) -> tuple[list, bool, dict]:
     """Run the Pyomo/Ipopt solver when the ``Run Optimization`` button is clicked.
 
     Runs as a background callback: loads the selected problem instance, solves it with
@@ -454,7 +454,7 @@ def _solution_store_entry(result: dict) -> dict | None:
     Returns:
         A dict with 'objective' and 'positions' keys, or None if the result is not usable.
     """
-    if not result.get("feasible") or not result.get("objective") or not result.get("positions"):
+    if not result.get("feasible") or result.get("objective") is None or not result.get("positions"):
         return None
     return {"objective": result["objective"], "positions": list(result["positions"])}
 
@@ -531,7 +531,7 @@ def update_solution_comparison(
 
     stride_z = (stride_solution or {}).get("objective")
     pyomo_z = (pyomo_solution or {}).get("objective")
-    comparable = bool(stride_z) and bool(pyomo_z) and stride_z > 0 and pyomo_z > 0
+    comparable = stride_z is not None and pyomo_z is not None and stride_z > 0 and pyomo_z > 0
     tied = comparable and math.isclose(stride_z, pyomo_z, rel_tol=1e-6, abs_tol=1e-9)
 
     outputs = []
