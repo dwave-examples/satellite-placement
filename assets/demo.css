@@ -170,8 +170,8 @@ table:focus-visible {
     background-color: rgba(32, 34, 57, 0.5);
     transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: calc(2.5 * 8px);
-    padding: 5px 26px 26px;
+    border-radius: 1.25rem;
+    padding: 0.25rem 1.625rem 1.625rem;
 }
 
 .title-section {
@@ -193,11 +193,11 @@ label,
 }
 
 .slider.mantine-Slider-root {
-    --slider-color: var(--teal-darker) !important;
+    --slider-color: var(--teal-dark) !important;
 }
 
 .checklist.mantine-InputWrapper-root.mantine-CheckboxGroup-root .mantine-Checkbox-input{
-    --checkbox-color: var(--teal-darker) !important;
+    --checkbox-color: var(--teal-dark) !important;
 }
 
 .left-column-collapse {

@@ -31,8 +31,7 @@ Dash reads all css files contained in `/assets/` so no imports are necessary.
     --orange: #FF7006;
     --teal-light: #06ECDC;
     --teal: #17BEBB;
-    --teal-dark: #17BEBB;
-    --teal-darker: #008C82;
+    --teal-dark: #008C82;
     --grey-lighter: #F5F7FB;
     --grey-light: #DBDBDB;
     --grey: #AAAAAA;
