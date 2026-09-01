@@ -1,2 +1,8 @@
-dwave-ocean-sdk>=6.1.0      # first version that includes dwave-samplers
-matplotlib>=3.3.4
+dash[diskcache]~=4.1
+dash-mantine-components~=2.5
+dwave-ocean-sdk~=9.4
+pyomo~=6.10
+
+# Needed only for unit testing
+pytest~=9.0
+pytest-mock~=3.15
