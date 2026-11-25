@@ -22,7 +22,7 @@ from dwave.system import StrideHybridSolver
 
 
 def create_model(interferences: np.ndarray, boundaries: dict) -> Model:
-    """Create a D-Wave mathematical model for the satellite placement problem.
+    """Create a Stride model for the satellite placement problem.
 
     Args:
         interferences: 2D numpy array of shape (num_satellites, num_satellites) with interference
