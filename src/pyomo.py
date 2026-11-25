@@ -28,6 +28,7 @@ from pyomo.environ import (
     minimize,
     value,
 )
+from pyomo.opt import TerminationCondition
 from src.utils import compute_midpoints, get_interference_matrix
 
 
@@ -95,6 +96,16 @@ def create_model(num_satellites: int, boundaries: dict, interferences: np.ndarra
     return model
 
 
+# Termination conditions under which Ipopt's returned point satisfies the constraints.
+_CONVERGED_CONDITIONS = frozenset(
+    {
+        TerminationCondition.optimal,
+        TerminationCondition.locallyOptimal,
+        TerminationCondition.feasible,
+    }
+)
+
+
 def solve_instance(instance: dict, time_limit: float) -> dict:
     """Run the Pyomo / Ipopt solver on a satellite placement instance.
 
@@ -124,17 +135,17 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
         )
 
     solver.options["max_cpu_time"] = time_limit
-    solver.solve(model)
+    results = solver.solve(model)
     elapsed = time_module.time() - start
 
-    try:
+    feasible = results.solver.termination_condition in _CONVERGED_CONDITIONS
+
+    if feasible:
         z_value = float(-value(model.obj))
         positions = [float(value(model.thetas[i])) for i in range(1, num_satellites + 1)]
-        feasible = True
-    except Exception:
+    else:
         z_value = 0.0
         positions = []
-        feasible = False
 
     return {
         "objective": z_value,

@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 
 from pyomo.environ import SolverFactory
+from pyomo.opt import TerminationCondition
 from src.pyomo import create_model, solve_instance
 
 NUM_SATELLITES = 3
@@ -71,6 +72,31 @@ def test_solve_instance_no_ipopt(mocker):
 
     with pytest.raises(RuntimeError):
         solve_instance(INSTANCE, time_limit=5)
+
+
+@pytest.mark.parametrize(
+    "termination_condition",
+    [
+        TerminationCondition.maxIterations,
+        TerminationCondition.maxTimeLimit,
+        TerminationCondition.infeasible,
+        TerminationCondition.other,
+    ],
+)
+def test_solve_instance_not_converged(mocker, termination_condition):
+    """Test that a solve that stops without converging is reported as infeasible."""
+
+    factory = mocker.patch("src.pyomo.SolverFactory")
+    solver = factory.return_value
+    solver.available.return_value = True
+    solver.solve.return_value.solver.termination_condition = termination_condition
+
+    output = solve_instance(INSTANCE, time_limit=5)
+
+    assert output["feasible"] is False
+    assert output["positions"] == []
+    assert output["objective"] == 0.0
+    assert output["solve_time"] >= 0
 
 
 @pytest.mark.skipif(
