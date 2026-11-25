@@ -229,11 +229,17 @@ def update_tab_loading_state(
         Input("running-stride", "data"),
         Input("running-pyomo", "data"),
         State("solver-type-select", "value"),
+        State("stride-tab", "children"),
+        State("pyomo-tab", "children"),
     ],
     prevent_initial_call=True,
 )
 def enable_tabs_when_done(
-    running_stride: bool, running_pyomo: bool, solvers: list[str]
+    running_stride: bool,
+    running_pyomo: bool,
+    solvers: list[str],
+    stride_tab_label: str,
+    pyomo_tab_label: str,
 ) -> tuple[bool, str, bool, str]:
     """Enable the results tabs only once every selected solver has finished.
 
@@ -244,6 +250,8 @@ def enable_tabs_when_done(
         running_stride (bool): Whether the Stride solver is running.
         running_pyomo (bool): Whether the Pyomo solver is running.
         solvers (list[str]): The list of selected solvers.
+        stride_tab_label (str): The current label of the Stride tab.
+        pyomo_tab_label (str): The current label of the Pyomo tab.
 
     Returns:
         A tuple containing:
@@ -256,16 +264,19 @@ def enable_tabs_when_done(
     if running_stride or running_pyomo:
         raise PreventUpdate
 
-    # Both flags changing in a single update can only come from the cancel handler
-    # (solver completions arrive one at a time); a cancelled run has no results to
-    # show, so keep the tabs disabled.
-    if len(ctx.triggered) > 1:
+    # The tab label will still say "Loading" as this function is what updates it. This is checking
+    # that the solver is selected and that its tab reads as "Loading" and since neither is running
+    # then they must be done.
+    stride_done = f"{SolverType.STRIDE.value}" in solvers and stride_tab_label != STRIDE_TAB_LABEL
+    pyomo_done = f"{SolverType.PYOMO.value}" in solvers and pyomo_tab_label != PYOMO_TAB_LABEL
+
+    if not stride_done and not pyomo_done:
         raise PreventUpdate
 
     return (
-        False if f"{SolverType.STRIDE.value}" in solvers else dash.no_update,
+        False if stride_done else dash.no_update,
         STRIDE_TAB_LABEL,
-        False if f"{SolverType.PYOMO.value}" in solvers else dash.no_update,
+        False if pyomo_done else dash.no_update,
         PYOMO_TAB_LABEL,
     )
 

@@ -27,24 +27,29 @@ from src.demo_enums import SolverType
 STRIDE = f"{SolverType.STRIDE.value}"
 PYOMO = f"{SolverType.PYOMO.value}"
 
+LOADING = "Loading..."
+ONE_TRIGGER = [{"prop_id": "running-stride.data"}]
+BOTH_TRIGGERS = [{"prop_id": "running-stride.data"}, {"prop_id": "running-pyomo.data"}]
 
+
+@pytest.mark.parametrize("triggered", [ONE_TRIGGER, BOTH_TRIGGERS])
 @pytest.mark.parametrize(
-    "solvers, stride_disabled_out, pyomo_disabled_out",
+    "solvers, stride_label, pyomo_label, stride_disabled_out, pyomo_disabled_out",
     [
-        ([STRIDE, PYOMO], False, False),
-        ([STRIDE], False, dash.no_update),
-        ([PYOMO], dash.no_update, False),
+        ([STRIDE, PYOMO], LOADING, LOADING, False, False),
+        ([STRIDE], LOADING, PYOMO_TAB_LABEL, False, dash.no_update),
+        ([PYOMO], STRIDE_TAB_LABEL, LOADING, dash.no_update, False),
     ],
 )
-def test_enable_tabs_when_done(solvers, stride_disabled_out, pyomo_disabled_out):
+def test_enable_tabs_when_done(
+    triggered, solvers, stride_label, pyomo_label, stride_disabled_out, pyomo_disabled_out
+):
     """Test that the results tabs are enabled once all selected solvers finish."""
 
     def run_callback():
-        context_value.set(
-            AttributeDict(**{"triggered_inputs": [{"prop_id": "running-stride.data"}]})
-        )
+        context_value.set(AttributeDict(**{"triggered_inputs": triggered}))
 
-        return enable_tabs_when_done(False, False, solvers)
+        return enable_tabs_when_done(False, False, solvers, stride_label, pyomo_label)
 
     ctx = copy_context()
 
@@ -65,11 +70,11 @@ def test_enable_tabs_when_still_running(running_stride, running_pyomo):
     """Test that the tabs stay disabled while any solver is still running."""
 
     def run_callback():
-        context_value.set(
-            AttributeDict(**{"triggered_inputs": [{"prop_id": "running-stride.data"}]})
-        )
+        context_value.set(AttributeDict(**{"triggered_inputs": ONE_TRIGGER}))
 
-        return enable_tabs_when_done(running_stride, running_pyomo, [STRIDE, PYOMO])
+        return enable_tabs_when_done(
+            running_stride, running_pyomo, [STRIDE, PYOMO], LOADING, LOADING
+        )
 
     ctx = copy_context()
 
@@ -77,22 +82,15 @@ def test_enable_tabs_when_still_running(running_stride, running_pyomo):
         ctx.run(run_callback)
 
 
-def test_enable_tabs_when_cancelled():
-    """Test that the tabs stay disabled when both running flags change at once (cancel)."""
+@pytest.mark.parametrize("triggered", [ONE_TRIGGER, BOTH_TRIGGERS])
+@pytest.mark.parametrize("solvers", [[STRIDE, PYOMO], [STRIDE], [PYOMO]])
+def test_enable_tabs_when_cancelled(triggered, solvers):
+    """Test that the tabs stay disabled after a cancel, which resets the tab labels."""
 
     def run_callback():
-        context_value.set(
-            AttributeDict(
-                **{
-                    "triggered_inputs": [
-                        {"prop_id": "running-stride.data"},
-                        {"prop_id": "running-pyomo.data"},
-                    ]
-                }
-            )
-        )
+        context_value.set(AttributeDict(**{"triggered_inputs": triggered}))
 
-        return enable_tabs_when_done(False, False, [STRIDE, PYOMO])
+        return enable_tabs_when_done(False, False, solvers, STRIDE_TAB_LABEL, PYOMO_TAB_LABEL)
 
     ctx = copy_context()
 
