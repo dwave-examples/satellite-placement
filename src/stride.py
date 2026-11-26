@@ -125,7 +125,7 @@ def solve_instance(instance: dict, time_limit: float) -> dict:
 
     start = time_module.time()
     solver = StrideHybridSolver()
-    solver.sample(model, time_limit=int(time_limit), label="Example - Satellite Placement")
+    solver.sample(model, time_limit=time_limit, label="Example - Satellite Placement")
     elapsed = time_module.time() - start
 
     feasible = all(bool(sym.state()) for sym in model.iter_constraints())
