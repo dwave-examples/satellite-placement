@@ -284,14 +284,19 @@ def enable_tabs_when_done(
 @dash.callback(
     Output("run-button", "style", allow_duplicate=True),
     Output("cancel-button", "style", allow_duplicate=True),
+    Output("num-satellites-select", "disabled"),
+    Output("instance-index-slider", "disabled"),
     inputs=[
         Input("running-stride", "data"),
         Input("running-pyomo", "data"),
     ],
     prevent_initial_call=True,
 )
-def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple[dict, dict]:
-    """Updates the visibility of the run and cancel buttons.
+def update_button_visibility(
+    running_stride: bool, running_pyomo: bool
+) -> tuple[dict, dict, bool, bool]:
+    """Updates the visibility of the run and cancel buttons and disables the instance
+    settings while a solver is running.
 
     Args:
         running_stride (bool): Whether the Stride solver is running.
@@ -302,11 +307,13 @@ def update_button_visibility(running_stride: bool, running_pyomo: bool) -> tuple
 
         - dict: Run button style.
         - dict: Cancel button style.
+        - bool: Whether the number of satellites dropdown is disabled.
+        - bool: Whether the scenario slider is disabled.
     """
     if not running_stride and not running_pyomo:
-        return {}, {"display": "none"}
+        return {}, {"display": "none"}, False, False
 
-    return {"display": "none"}, {}
+    return {"display": "none"}, {}, True, True
 
 
 @dash.callback(

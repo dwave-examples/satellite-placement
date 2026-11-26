@@ -22,16 +22,18 @@ from demo_callbacks import update_button_visibility
 
 
 @pytest.mark.parametrize(
-    "running_stride, running_pyomo, run_style, cancel_style",
+    "running_stride, running_pyomo, run_style, cancel_style, settings_disabled",
     [
-        (False, False, {}, {"display": "none"}),
-        (True, False, {"display": "none"}, {}),
-        (False, True, {"display": "none"}, {}),
-        (True, True, {"display": "none"}, {}),
+        (False, False, {}, {"display": "none"}, False),
+        (True, False, {"display": "none"}, {}, True),
+        (False, True, {"display": "none"}, {}, True),
+        (True, True, {"display": "none"}, {}, True),
     ],
 )
-def test_update_button_visibility(running_stride, running_pyomo, run_style, cancel_style):
-    """Test the visibility of the run and cancel buttons while solvers run."""
+def test_update_button_visibility(
+    running_stride, running_pyomo, run_style, cancel_style, settings_disabled
+):
+    """Test the run/cancel button visibility and instance-settings disabling while solvers run."""
 
     def run_callback():
         context_value.set(
@@ -43,4 +45,4 @@ def test_update_button_visibility(running_stride, running_pyomo, run_style, canc
     ctx = copy_context()
 
     output = ctx.run(run_callback)
-    assert output == (run_style, cancel_style)
+    assert output == (run_style, cancel_style, settings_disabled, settings_disabled)
