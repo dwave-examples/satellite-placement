@@ -596,7 +596,7 @@ def _result_section(
     if result.get("error"):
         return [generate_error_layout(f"{solver_label} error", result["error"])]
 
-    if not positions:
+    if not positions or not result.get("feasible"):
         return [
             generate_error_layout(solver_label, "no feasible solution found within the time limit.")
         ]
