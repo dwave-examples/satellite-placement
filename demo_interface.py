@@ -182,7 +182,7 @@ def generate_settings_form() -> html.Div:
                 sorted(num_sat_options, key=lambda op: int(op["value"])),
             ),
             slider(
-                "Scenario",
+                "Instance",
                 "instance-index-slider",
                 INSTANCE_INDEX,
             ),
@@ -304,6 +304,7 @@ def generate_results_layout(
     objective: float,
     table_data: dict[str, list],
     comparison_card: html.Div | None = None,
+    graph_index: str = "results",
 ) -> html.Div:
     """Generate a Div containing the results of the optimization.
 
@@ -313,6 +314,8 @@ def generate_results_layout(
         table_data: A dictionary containing per-satellite results.
         comparison_card: Optional metric card comparing this solver's objective against the other
             solver's.
+        graph_index: Index for the graph's ``orbit-graph`` pattern-matching id; must be unique
+            among the results graphs on the page.
 
     Returns:
         A Div containing the results of the optimization.
@@ -324,8 +327,15 @@ def generate_results_layout(
                 parent_className="graph-loading",
                 type="circle",
                 color=THEME_COLOR,
+                delay_show=500,
                 children=html.Div(
-                    dcc.Graph(figure=fig, responsive=True, config={"displayModeBar": False}),
+                    dcc.Graph(
+                        id={"type": "orbit-graph", "index": graph_index},
+                        figure=fig,
+                        responsive=True,
+                        config={"displayModeBar": False},
+                        clear_on_unhover=True,
+                    ),
                     className="graph-wrapper",
                 ),
             ),
@@ -491,10 +501,12 @@ def create_interface() -> html.Div:
                                                                 parent_className="graph-loading",
                                                                 type="circle",
                                                                 color=THEME_COLOR,
+                                                                delay_show=500,
                                                                 children=html.Div(
                                                                     dcc.Graph(
                                                                         id="input-graph",
                                                                         responsive=True,
+                                                                        clear_on_unhover=True,
                                                                         config={
                                                                             "displayModeBar": False
                                                                         },

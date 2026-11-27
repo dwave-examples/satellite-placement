@@ -19,7 +19,7 @@ import math
 import dash
 import numpy as np
 import plotly.graph_objects as go
-from dash import MATCH, ctx, html
+from dash import MATCH, Patch, ctx, html
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -32,7 +32,7 @@ from demo_interface import (
     metric_card,
 )
 from src.demo_enums import SolverType
-from src.plot import create_orbit_figure
+from src.plot import create_orbit_figure, orbit_restyle_updates
 from src.utils import get_instance, get_interference_matrix
 
 _SUPERSCRIPT = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
@@ -143,6 +143,74 @@ def render_input_state(
     }
 
     return fig, generate_instance_stats(stats), True, True, "input-tab"
+
+
+@dash.callback(
+    Output("input-graph", "figure", allow_duplicate=True),
+    inputs=[
+        Input("input-graph", "hoverData"),
+        Input("input-graph", "restyleData"),
+        State("input-graph", "figure"),
+    ],
+    prevent_initial_call=True,
+)
+@dash.callback(
+    Output({"type": "orbit-graph", "index": MATCH}, "figure"),
+    inputs=[
+        Input({"type": "orbit-graph", "index": MATCH}, "hoverData"),
+        Input({"type": "orbit-graph", "index": MATCH}, "restyleData"),
+        State({"type": "orbit-graph", "index": MATCH}, "figure"),
+    ],
+    prevent_initial_call=True,
+)
+def highlight_satellites(hover_data: dict | None, restyle_data: list | None, figure: dict) -> Patch:
+    """Emphasize the hovered satellite, or those selected through the legend, and dim the rest.
+
+    Registered for the input graph and for each results graph.
+
+    Args:
+        hover_data: The graph's hover event, or None once the cursor leaves the plot.
+        restyle_data: The graph's most recent legend-click event: the edited trace
+            properties and the indices of the traces they apply to.
+        figure: The graph's current figure.
+
+    Returns:
+        A partial update of the figure.
+    """
+    if not figure:
+        raise PreventUpdate
+
+    # restyleData keeps the last legend click, which may predate the current figure, so it
+    # only applies when it is what triggered this update.
+    legend_clicked = any(t["prop_id"].endswith(".restyleData") for t in ctx.triggered)
+
+    # The highlighted satellite is kept on the figure so that it carries over between events.
+    layout_meta = (figure.get("layout") or {}).get("meta") or {}
+    hover_state = layout_meta.get("hover")
+
+    updates, new_hover_state = orbit_restyle_updates(
+        figure["data"],
+        hover_data=hover_data,
+        restyle_data=restyle_data if legend_clicked else None,
+        hover_state=hover_state,
+    )
+    if not updates and new_hover_state == hover_state:
+        raise PreventUpdate
+
+    patched_figure = Patch()
+    for trace_index, properties in updates.items():
+        for path, value in properties.items():
+            # Paths are dotted (e.g. "marker.size"); walk down to the parent of the leaf.
+            *parents, leaf = path.split(".")
+            target = patched_figure["data"][trace_index]
+            for key in parents:
+                target = target[key]
+            target[leaf] = value
+
+    if new_hover_state != hover_state:
+        patched_figure["layout"]["meta"] = {"hover": new_hover_state}
+
+    return patched_figure
 
 
 @dash.callback(
@@ -626,4 +694,4 @@ def _result_section(
         table_data["Allowed range"].append(f"{west[i]:.1f}° – {east[i]:.1f}°")
         table_data["Optimized position"].append(f"{positions[i]:.1f}°")
 
-    return generate_results_layout(fig, z, table_data, comparison_card)
+    return generate_results_layout(fig, z, table_data, comparison_card, graph_index=solver_label)
